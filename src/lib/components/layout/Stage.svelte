@@ -1,4 +1,5 @@
-<script lang="ts">
+
+	<script lang="ts">
 	import { derived, get } from 'svelte/store';
 	import { slideStore, globalSettingsStore, selectionStore } from '$lib/stores/appStores';
 	import { deleteSlide } from '$lib/actions/historyActions';
@@ -7,6 +8,7 @@
 	import Button from '../ui/Button.svelte';
 
 	const dimensions = derived(globalSettingsStore, ($globals) => {
+		if (!$globals) return { width: 1080, height: 566 };
 		switch ($globals.aspectRatio) {
 			case '1:1':
 				return { width: 1080, height: 1080 };
@@ -21,6 +23,7 @@
 	const slidesWithLogo = derived(
 		[slideStore, globalSettingsStore],
 		([$slideStore, $globals]) => {
+			if (!$globals?.brandingKit) return $slideStore;
 			const { logoUrl, showLogoOnAllSlides } = $globals.brandingKit;
 
 			if (!logoUrl || !showLogoOnAllSlides) {
@@ -42,7 +45,7 @@
 					y: existingLogo?.y || (slideDims.height - 70),
 					width: existingLogo?.width || 100,
 					height: existingLogo?.height || 60,
-					zIndex: 999, // Ensure logo is on top
+					zIndex: 999,
 					styles: {}
 				};
 
@@ -73,6 +76,7 @@
 	}
 
 	function getSlideStyles(slide: Slide, globals: GlobalSettings) {
+		if (!slide || !globals) return '';
 		const activeFilters = slide.filters ?? globals.filters;
 		return `
 			background-color: ${slide.styles.backgroundColor};
@@ -84,7 +88,6 @@
 				blur(${activeFilters.blur}px);
 		`;
 	}
-
 </script>
 
 <div class="canvas-controls">
@@ -96,29 +99,24 @@
 	<Button on:click={() => deleteSlide($selectionStore.selectedSlideId)} variant="secondary" disabled={$slideStore.length <= 1}>Delete Slide</Button>
 </div>
 
-<!-- THIS IS THE FIX: The on:mousedown handler now correctly uses an inline function -->
 <div class="stage-wrapper" role="presentation" on:mousedown={() => selectionStore.update(s => ({...s, selectedElementId: null}))}>
-	<div class="slide-list">
-		{#if $activeSlideIndex !== -1 && $slidesWithLogo[$activeSlideIndex]}
-			{@const activeSlide = $slidesWithLogo[$activeSlideIndex]}
-			<div class="slide-container">
-				<div
-					id={`slide-${activeSlide.id}`}
-					class="slide"
-					role="document"
-					class:selected={$selectionStore.selectedSlideId === activeSlide.id && !$selectionStore.selectedElementId}
-					style:width="{$dimensions.width}px"
-					style:height="{$dimensions.height}px"
-					style={getSlideStyles(activeSlide, $globalSettingsStore)}
-					on:mousedown={(e) => handleSlideClick(e, activeSlide.id)}
-				>
-					{#each activeSlide.elements.sort((a,b) => a.zIndex - b.zIndex) as element (element.id)}
-						<SlideElement {element} slideId={activeSlide.id} slideDimensions={$dimensions} />
-					{/each}
-				</div>
-			</div>
-		{/if}
-	</div>
+	{#if $activeSlideIndex !== -1 && $slidesWithLogo && $slidesWithLogo[$activeSlideIndex]}
+		{@const activeSlide = $slidesWithLogo[$activeSlideIndex]}
+		<div
+			id={`slide-${activeSlide.id}`}
+			class="slide"
+			role="document"
+			class:selected={$selectionStore.selectedSlideId === activeSlide.id && !$selectionStore.selectedElementId}
+			style:width="{$dimensions.width}px"
+			style:height="{$dimensions.height}px"
+			style={getSlideStyles(activeSlide, $globalSettingsStore)}
+			on:mousedown={(e) => handleSlideClick(e, activeSlide.id)}
+		>
+			{#each activeSlide.elements.sort((a,b) => a.zIndex - b.zIndex) as element (element.id)}
+				<SlideElement {element} slideId={activeSlide.id} slideDimensions={$dimensions} />
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -129,38 +127,35 @@
 		gap: var(--spacing-m);
 		flex-shrink: 0;
 	}
+
 	#slide-indicator {
 		font-variant-numeric: tabular-nums;
 		padding: 0 var(--spacing-l);
 		font-weight: 500;
 	}
+
 	.stage-wrapper {
-		width: 100%;
-		height: 100%;
+		flex-grow: 1;
+		min-height: 0;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		padding: var(--spacing-xl);
 		overflow: hidden;
 	}
-	.slide-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xl);
-	}
+
 	.slide {
 		position: relative;
 		overflow: hidden;
 		transform-origin: center center;
-		transform: scale(0.7); /* Adjust for larger canvas sizes */
 		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 		border-radius: 8px;
 		border: 1px solid var(--border-color);
-		transition: box-shadow 0.2s, filter 0.2s ease-in-out;
+		transition: box-shadow 0.2s, filter 0.2s ease-in-out, width 0.3s ease, height 0.3s ease;
+		flex-shrink: 0;
 	}
 
 	.slide.selected {
 		box-shadow: 0 0 0 3px var(--primary-color);
 	}
 </style>
-	

@@ -1,22 +1,31 @@
-// /src/lib/utils/fileHandlers.ts
-
 import JSZip from 'jszip';
 import html2canvas from 'html2canvas';
 import { get } from 'svelte/store';
-import { slideStore, globalSettingsStore, appUIStore, selectionStore } from '$lib/stores/appStores';
+import { slideStore, globalSettingsStore, appUIStore, selectionStore, defaultGlobals } from '$lib/stores/appStores';
 import { historyStore } from '$lib/stores/historyStore';
 import { showToast } from '$lib/stores/toastStore';
 import type { Slide, GlobalSettings, TemplateFile, AppState } from '$lib/types';
 import { tick } from 'svelte';
-
-// === TEMPLATE IMPORT / EXPORT ===
+import { createId } from '@paralleldrive/cuid2';
 
 export function exportAsTemplate() {
 	const data: TemplateFile = {
 		globals: get(globalSettingsStore),
 		slides: get(slideStore)
 	};
-	// ... (rest of the function is the same)
+	const jsonString = JSON.stringify(data, null, 2);
+	const blob = new Blob([jsonString], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'presentation.magicslide';
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+
+	showToast('Template saved!', 'success');
 }
 
 export async function importFromTemplate(e: Event) {
@@ -31,59 +40,69 @@ export async function importFromTemplate(e: Event) {
 
 	const text = await file.text();
 	try {
-		const data = JSON.parse(text) as TemplateFile;
+		const data = JSON.parse(text) as Partial<TemplateFile>;
 
-		// Basic validation
-		if (!data.globals || !data.slides) {
-			throw new Error('Invalid template format.');
+		const mergedGlobals: GlobalSettings = {
+			...defaultGlobals,
+			...(data.globals || {}),
+			brandingKit: {
+				...defaultGlobals.brandingKit,
+				...(data.globals?.brandingKit || {})
+			},
+			filters: {
+				...defaultGlobals.filters,
+				...(data.globals?.filters || {})
+			}
+		};
+
+		const validatedSlides = (data.slides || []).map(slide => ({
+			...slide,
+			id: slide.id || createId(),
+			elements: (slide.elements || []).map(el => ({
+				...el,
+				id: el.id || createId()
+			}))
+		}));
+
+		if (validatedSlides.length === 0) {
+			showToast('Template has no slides. Loading defaults instead.', 'info');
+			const defaultSlides = parseTextToSlides("h1: Empty Template", "#4f46e5");
+			historyStore.addSnapshot({ globals: mergedGlobals, slides: defaultSlides });
+			selectionStore.set({ selectedSlideId: defaultSlides[0]?.id || null, selectedElementId: null });
+		} else {
+			historyStore.addSnapshot({ globals: mergedGlobals, slides: validatedSlides });
+			selectionStore.set({ selectedSlideId: validatedSlides[0]?.id || null, selectedElementId: null });
 		}
-		
-		historyStore.addSnapshot(data); // Add the loaded state as a new history point
-		selectionStore.set({ selectedSlideId: data.slides[0]?.id || null, selectedElementId: null });
 		
 		showToast('Template loaded successfully!', 'success');
 	} catch (error) {
 		console.error('Template import failed:', error);
 		showToast('Invalid or corrupted template file.', 'error');
 	} finally {
-		target.value = ''; // Reset input
+		target.value = '';
 	}
 }
 
-
-// === ZIP EXPORT ===
-
 export async function exportAsZip() {
-	selectionStore.set({ selectedSlideId: get(selectionStore).selectedSlideId, selectedElementId: null });
+	selectionStore.update(s => ({...s, selectedElementId: null}));
 	appUIStore.update(s => ({ ...s, isExporting: true }));
-	await tick(); // Wait for the DOM to update and remove selection outlines
+	await tick();
 
 	const zip = new JSZip();
-	const slides = get(slideStore); // We need the data to iterate, not just the nodes
+	const slideNode = document.querySelector('.slide');
+	
+	if (!slideNode) {
+		showToast('Could not find slide to export.', 'error');
+		appUIStore.update(s => ({ ...s, isExporting: false }));
+		return;
+	}
 
 	try {
-		// We have to render *all* slides to capture them, not just the active one
-		// This requires a temporary DOM container
-		const captureContainer = document.createElement('div');
-		captureContainer.style.position = 'fixed';
-		captureContainer.style.left = '-9999px'; // Hide it off-screen
-		captureContainer.style.top = '-9999px';
-		document.body.appendChild(captureContainer);
-		
-		// This is a simplified approach. A full implementation would use Svelte's client-side
-		// component API to render each slide into the container. For our single-page view,
-		// we'll find the single active slide node as a proxy for now.
-		// NOTE: A more robust solution for multi-slide capture would be needed in a larger app.
-		// For this implementation, we will capture the currently rendered slide as an example.
-		
-		const slideNode = document.querySelector('.slide');
-		if (!slideNode) throw new Error('Could not find slide to capture.');
-
 		const canvas = await html2canvas(slideNode as HTMLElement, {
-			scale: 2, // Capture at higher resolution to prevent blurriness
+			scale: 2,
 			backgroundColor: null,
-			allowTaint: true, // Important for external/base64 images
-			useCORS: true // Important for external/base64 images
+			allowTaint: true,
+			useCORS: true
 		});
 		
 		const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
