@@ -6,7 +6,12 @@
 <div class="color-picker-group">
 	<label for={label}>{label}</label>
 	<div class="picker-wrapper">
-		<input type="color" id={label} value={value || '#000000'} on:input|currentTarget={e => value = e.value} />
+		<input
+			type="color"
+			id={label}
+			value={value || '#000000'}
+			on:input={(e) => (value = e.currentTarget.value)}
+		/>
 		<span>{value ? value.toUpperCase() : '#------'}</span>
 	</div>
 </div>
