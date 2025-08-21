@@ -1,112 +1,126 @@
+// /src/lib/components/layout/ControlsPanel.svelte (DEFINITIVELY CORRECTED)
+
 <script lang="ts">
-	import { slideStore, globalSettingsStore, deselectAll } from '$lib/stores/appStores';
+	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { parseTextToSlides } from '$lib/utils/parser';
-	import { showToast } from '$lib/stores/toastStore';
+	import { globalSettingsStore, appUIStore, slideStore } from '$lib/stores/appStores';
+	import { historyStore } from '$lib/stores/historyStore';
+	import { updateGlobalSettings, updateBrandingKit, addNewSlide } from '$lib/actions/historyActions';
 	import { exportAsZip, exportAsTemplate, importFromTemplate } from '$lib/utils/fileHandlers';
+	import { getSlidePreset, slidePresetOptions } from '$lib/utils/presets';
 
 	import Card from '../ui/Card.svelte';
 	import Button from '../ui/Button.svelte';
 	import ColorPicker from '../ui/ColorPicker.svelte';
-	import TextInput from '../ui/TextInput.svelte';
+	import FileInput from '../ui/FileInput.svelte';
+	import Select from '../ui/Select.svelte';
+	import Checkbox from '../ui/Checkbox.svelte';
 
-	let textInput = `h1: Welcome to Magic Slide
-p: Generate slides from text.
----
-h1: Features
-*: Fully client-side
-*: Interactive editor
-*: Export to ZIP or .magicslide template
----
-cta: Start Creating`;
-
-	let isExporting = false;
 	let fileInput: HTMLInputElement;
+	let manualSlideType: string = 'titleAndContent';
 
-	function handleGenerate() {
-		deselectAll();
-		const newSlides = parseTextToSlides(textInput, $globalSettingsStore.themeColor);
-		slideStore.set(newSlides);
-		showToast('Slides generated successfully!', 'success');
+	onMount(() => {
+		const savedBranding = localStorage.getItem('magic-slide-branding');
+		if (savedBranding) {
+			try {
+				const parsedBranding = JSON.parse(savedBranding);
+				// Use the action to ensure it's part of the history if needed, though onMount is usually fine
+				updateBrandingKit(parsedBranding); 
+			} catch (e) {
+				console.error('Failed to parse saved branding kit.');
+			}
+		}
+
+		// Save to localStorage whenever the branding kit changes
+		globalSettingsStore.subscribe(settings => {
+			localStorage.setItem('magic-slide-branding', JSON.stringify(settings.brandingKit));
+		});
+	});
+
+	function handleClearBranding() {
+		localStorage.removeItem('magic-slide-branding');
+		// Reset to a default state
+		updateBrandingKit({
+			logoUrl: null,
+			brandColor: '#4f46e5',
+			brandFont: 'Inter',
+			showLogoOnAllSlides: true
+		});
 	}
 
-	function handleLogoUpload(e: Event) {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (!file) return;
-
-		const reader = new FileReader();
-		reader.onload = (event) => {
-			globalSettingsStore.update((settings) => ({
-				...settings,
-				logoUrl: event.target?.result as string
-			}));
-			showToast('Logo updated!', 'success');
-		};
-		reader.readAsDataURL(file);
-	}
-
-	async function handleZipExport() {
-		isExporting = true;
-		showToast('Starting ZIP export...', 'info');
-		try {
-			await exportAsZip(get(slideStore), get(globalSettingsStore));
-			showToast('Download started!', 'success');
-		} catch (error) {
-			console.error('ZIP Export failed:', error);
-			showToast('Export failed. Check console for details.', 'error');
-		} finally {
-			isExporting = false;
+	function handleAddManualSlide() {
+		const preset = getSlidePreset(manualSlideType);
+		if (preset) {
+			const currentSlideIndex = get(slideStore).findIndex(s => s.id === get(globalSettingsStore).selectedSlideId)
+			addNewSlide(preset, currentSlideIndex + 1);
 		}
 	}
-
-	function handleTemplateSave() {
-		exportAsTemplate(get(slideStore), get(globalSettingsStore));
-	}
-
-	async function handleTemplateLoad(e: Event) {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (!file) return;
-		
-		await importFromTemplate(file);
-		target.value = ''; // Reset input to allow re-uploading the same file
-	}
-
 </script>
 
 <div class="controls-panel-content">
 	<Card>
-		<h2>Generator</h2>
-		<textarea bind:value={textInput} placeholder="Enter your slide content here..." rows="10" />
-		<Button on:click={handleGenerate}>Generate Slides</Button>
+		<div class="actions-grid">
+			<Button on:click={historyStore.undo} disabled={!$historyStore.canUndo}>Undo</Button>
+			<Button on:click={historyStore.redo} disabled={!$historyStore.canRedo} variant="secondary">Redo</Button>
+		</div>
 	</Card>
 
 	<Card>
-		<h2>Global Settings</h2>
-		<ColorPicker label="Theme Color" bind:value={$globalSettingsStore.themeColor} />
-		<TextInput label="Font Family" bind:value={$globalSettingsStore.fontFamily} />
-		<Button on:click={() => document.getElementById('logo-upload')?.click()}>Upload Logo</Button>
-		<input
-			type="file"
-			id="logo-upload"
-			hidden
-			accept="image/*"
-			on:change={handleLogoUpload}
+		<h2>Project Settings</h2>
+		<Select
+			label="Canvas Aspect Ratio"
+			options={[
+				{ value: '1.91:1', label: 'Landscape (1.91:1)' },
+				{ value: '4:5', label: 'Vertical (4:5)' },
+				{ value: '1:1', label: 'Square (1:1)' }
+			]}
+			bind:value={$globalSettingsStore.aspectRatio}
+			on:change={(e) => updateGlobalSettings({ aspectRatio: e.currentTarget.value })}
 		/>
 	</Card>
 
 	<Card>
-		<h2>Actions</h2>
-		<Button on:click={handleTemplateSave}>Save as Template</Button>
-		<Button on:click={() => fileInput.click()} variant="secondary">Load Template</Button>
-		<input type="file" bind:this={fileInput} hidden accept=".magicslide" on:change={handleTemplateLoad} />
-		<Button on:click={handleZipExport} disabled={isExporting}>
-			{#if isExporting}
-				Exporting...
-			{:else}
-				Export as .ZIP (PNGs)
-			{/if}
+		<h2>Branding Kit</h2>
+		<FileInput
+			label="Brand Logo"
+			accept="image/*"
+			on:change={(e) => updateBrandingKit({ logoUrl: e.detail.fileData })}
+		/>
+		<ColorPicker
+			label="Brand Color"
+			bind:value={$globalSettingsStore.brandingKit.brandColor}
+			on:input={(e) => updateBrandingKit({ brandColor: e.currentTarget.value })}
+		/>
+		<Checkbox
+			label="Show Logo on All Slides"
+			bind:checked={$globalSettingsStore.brandingKit.showLogoOnAllSlides}
+			on:change={(e) => updateBrandingKit({ showLogoOnAllSlides: e.currentTarget.checked })}
+		/>
+		<Button on:click={handleClearBranding} variant="secondary">Clear Saved Branding</Button>
+	</Card>
+
+	<Card>
+		<h2>Slide Creation</h2>
+		<Select
+			label="Add Slide from Preset"
+			options={slidePresetOptions}
+			bind:value={manualSlideType}
+		/>
+		<Button on:click={handleAddManualSlide}>Add Manual Slide</Button>
+	</Card>
+
+	<Card>
+		<h2>Import / Export</h2>
+		{#if $appUIStore.isExporting}
+			<div id="loading-indicator">Exporting, please wait...</div>
+		{/if}
+		<div class="actions-grid">
+			<Button on:click={exportAsTemplate}>Save Template</Button>
+			<Button on:click={() => fileInput.click()} variant="secondary">Load Template</Button>
+		</div>
+		<input type="file" bind:this={fileInput} hidden accept=".magicslide" on:change={importFromTemplate} />
+		<Button on:click={exportAsZip} disabled={$appUIStore.isExporting}>
+			Export as .ZIP (PNGs)
 		</Button>
 	</Card>
 </div>
@@ -118,28 +132,25 @@ cta: Start Creating`;
 		gap: var(--spacing-m);
 	}
 	h2 {
-		margin-bottom: var(--spacing-m);
-		font-size: 1.25rem;
-	}
-	textarea {
-		width: 100%;
-		background: rgba(15, 23, 42, 0.5);
-		border: 1px solid var(--border-color);
-		border-radius: 8px;
-		padding: var(--spacing-s) var(--spacing-m);
-		color: var(--fg-color);
-		font-family: var(--font-family-base);
-		font-size: var(--fs-ui);
-		resize: vertical;
-		margin-bottom: var(--spacing-m);
-	}
-	textarea:focus {
-		outline: none;
-		border-color: var(--primary-color);
+		margin-bottom: var(--spacing-s);
+		font-size: 1.125rem;
 	}
 	.controls-panel-content :global(.card) {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-m);
+	}
+	.actions-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-m);
+	}
+	#loading-indicator {
+		text-align: center;
+		padding: var(--spacing-s);
+		background: rgba(0,0,0,0.2);
+		border-radius: 8px;
+		font-style: italic;
+		color: var(--fg-color);
 	}
 </style>
