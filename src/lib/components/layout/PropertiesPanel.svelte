@@ -37,7 +37,7 @@
 	}
 	$: { if ($selectedSlide) { slideFilters = $selectedSlide.filters; } }
 	
-	$: filters = slideFilters ?? $globalSettingsStore.filters;
+	$: filters = slideFilters ?? ($globalSettingsStore.filters || { brightness: 100, contrast: 100, saturate: 100, blur: 0 });
 
 	$: if ($selectedElement) { updateElement($selectedSlide!.id, $selectedElement.id, { styles: { fontFamily, textAlign, isBold, isItalic, gradient } }); }
 	$: if ($selectedElement?.type === 'heading' || $selectedElement?.type === 'paragraph' || $selectedElement?.type === 'cta') { updateElement($selectedSlide!.id, $selectedElement.id, { content }); }
@@ -46,8 +46,7 @@
 	function handleAddElement(type: 'heading' | 'paragraph') {
 		if (!$selectedSlide) return;
 		const preset = getElementPreset(type);
-
-addNewElement($selectedSlide.id, preset);
+		addNewElement($selectedSlide.id, preset);
 	}
 
     function applyBrandingToSelected() {
@@ -76,22 +75,24 @@ addNewElement($selectedSlide.id, preset);
 				<GradientPicker bind:gradient />
 			{/if}
 			<div class="actions-grid">
-				<Button on:click={() => reorderElement($selectedSlide!.id, $selectedElement!.id, 'backward')}>Backward</Button>
-				<Button on:click={() => reorderElement($selectedSlide!.id, $selectedElement!.id, 'forward')}>Forward</Button>
+				<Button on:click={() => reorderElement($selectedSlide.id, $selectedElement.id, 'backward')}>Backward</Button>
+				<Button on:click={() => reorderElement($selectedSlide.id, $selectedElement.id, 'forward')}>Forward</Button>
 			</div>
-			<Button on:click={() => deleteElement($selectedSlide!.id, $selectedElement!.id)} variant="secondary">Delete Element</Button>
-		{:else if $selectedSlide && filters}
+			<Button on:click={() => deleteElement($selectedSlide.id, $selectedElement.id)} variant="secondary">Delete Element</Button>
+		{:else if $selectedSlide}
 			<h2>Slide Properties</h2>
-			<FileInput label="Background Image" accept="image/*" on:change={(e) => updateSlide($selectedSlide!.id, { backgroundImage: e.detail.fileData })} />
+			<FileInput label="Background Image" accept="image/*" on:change={(e) => updateSlide($selectedSlide.id, { backgroundImage: e.detail.fileData })} />
 			{#if $selectedSlide.backgroundImage}
-				<Button on:click={() => updateSlide($selectedSlide!.id, { backgroundImage: null })} variant="secondary">Remove Image</Button>
+				<Button on:click={() => updateSlide($selectedSlide.id, { backgroundImage: null })} variant="secondary">Remove Image</Button>
 			{/if}
 			<h3>Filter Overrides</h3>
-			<Slider label="Brightness" bind:value={filters.brightness} min={0} max={200} on:input={() => (slideFilters = filters)} />
-			<Slider label="Contrast" bind:value={filters.contrast} min={0} max={200} on:input={() => (slideFilters = filters)} />
-			<Slider label="Saturation" bind:value={filters.saturate} min={0} max={200} on:input={() => (slideFilters = filters)} />
-			<Slider label="Blur" bind:value={filters.blur} min={0} max={20} on:input={() => (slideFilters = filters)} />
-			<Button on:click={() => (slideFilters = null)} variant="secondary" disabled={!$selectedSlide.filters}>Reset to Global</Button>
+			{#if filters}
+				<Slider label="Brightness" bind:value={filters.brightness} min={0} max={200} on:input={() => (slideFilters = filters)} />
+				<Slider label="Contrast" bind:value={filters.contrast} min={0} max={200} on:input={() => (slideFilters = filters)} />
+				<Slider label="Saturation" bind:value={filters.saturate} min={0} max={200} on:input={() => (slideFilters = filters)} />
+				<Slider label="Blur" bind:value={filters.blur} min={0} max={20} on:input={() => (slideFilters = filters)} />
+				<Button on:click={() => (slideFilters = null)} variant="secondary" disabled={!$selectedSlide.filters}>Reset to Global</Button>
+			{/if}
 		{:else}
 			<h2>Inspector</h2>
 			<p class="placeholder">Select a slide or an element.</p>
@@ -105,7 +106,7 @@ addNewElement($selectedSlide.id, preset);
 			<Button on:click={() => handleAddElement('heading')}>Add Heading</Button>
 			<Button on:click={() => handleAddElement('paragraph')}>Add Textbox</Button>
 		</div>
-		<FileInput label="Add Image" accept="image/*" on:change={(e) => addNewElement($selectedSlide!.id, getElementPreset('image', e.detail.fileData))} />
+		<FileInput label="Add Image" accept="image/*" on:change={(e) => addNewElement($selectedSlide.id, getElementPreset('image', e.detail.fileData))} />
 	</Card>
 	{/if}
 </div>
