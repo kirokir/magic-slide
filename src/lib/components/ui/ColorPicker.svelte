@@ -1,3 +1,5 @@
+// /src/lib/components/ui/ColorPicker.svelte (CORRECTED)
+
 <script lang="ts">
 	export let value: string;
 	export let label: string;
@@ -7,7 +9,8 @@
 	<label for={label}>{label}</label>
 	<div class="picker-wrapper">
 		<input type="color" id={label} bind:value />
-		<span>{value.toUpperCase()}</span>
+		<!-- This is the fix: Check if 'value' is truthy before calling toUpperCase() -->
+		<span>{value ? value.toUpperCase() : ''}</span>
 	</div>
 </div>
 
