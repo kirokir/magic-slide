@@ -2,18 +2,27 @@
 	import { derived, get } from 'svelte/store';
 	import { slideStore, globalSettingsStore, selectionStore } from '$lib/stores/appStores';
 	import { deleteSlide } from '$lib/actions/historyActions';
+	import { historyStore } from '$lib/stores/historyStore';
+	import type { Slide, GlobalSettings } from '$lib/types/index.ts';
 	import SlideElement from '../editor/SlideElement.svelte';
 	import { createId } from '@paralleldrive/cuid2';
 	import Button from '../ui/Button.svelte';
 
+	const { canUndo, canRedo } = historyStore;
+
 	const dimensions = derived(globalSettingsStore, ($globals) => {
-		if (!$globals) return { width: 1080, height: 566 };
+		if (!$globals) return { width: 1080, height: 566, ratio: '1.91 / 1' };
 		switch ($globals.aspectRatio) {
 			case '1:1': return { width: 1080, height: 1080, ratio: '1 / 1' };
 			case '4:5': return { width: 1080, height: 1350, ratio: '4 / 5' };
 			case '1.91:1': default: return { width: 1080, height: 566, ratio: '1.91 / 1' };
 		}
 	});
+
+	let scaleFactor = '1';
+	$: if ($dimensions) {
+		scaleFactor = `min(100% / ${$dimensions.width}, 100% / ${$dimensions.height})`;
+	}
 
 	const slidesWithLogo = derived([slideStore, globalSettingsStore],([$slideStore, $globals]) => {
 			if (!$globals?.brandingKit) return $slideStore;
@@ -58,17 +67,23 @@
 			filter: brightness(${activeFilters.brightness}%) contrast(${activeFilters.contrast}%) saturate(${activeFilters.saturate}%) blur(${activeFilters.blur}px);
 		`;
 	}
+
+	function handleDeleteClick() {
+		if ($selectionStore.selectedSlideId) {
+			deleteSlide($selectionStore.selectedSlideId);
+		}
+	}
 </script>
 
-<div class="top-controls">
-	<Button on:click={() => historyStore.undo()} disabled={!$historyStore.canUndo}>Undo</Button>
-	<Button on:click={() => historyStore.redo()} disabled={!$historyStore.canRedo} variant="secondary">Redo</Button>
-	<div class="nav-controls">
+<div class="top-controls" role="toolbar" aria-label="Presentation controls" tabindex="0">
+	<Button on:click={() => historyStore.undo()} disabled={!$canUndo}>Undo</Button>
+	<Button on:click={() => historyStore.redo()} disabled={!$canRedo} variant="secondary">Redo</Button>
+	<div class="nav-controls" role="group" aria-label="Slide navigation">
 		<Button on:click={() => navigateSlide('prev')} disabled={$activeSlideIndex <= 0}>Prev</Button>
-		<div id="slide-indicator">{$activeSlideIndex === -1 ? '-' : $activeSlideIndex + 1} / {$slideStore.length}</div>
+		<div id="slide-indicator" aria-live="polite">{$activeSlideIndex === -1 ? '-' : $activeSlideIndex + 1} / {$slideStore.length}</div>
 		<Button on:click={() => navigateSlide('next')} disabled={$activeSlideIndex >= $slideStore.length - 1}>Next</Button>
 	</div>
-	<Button on:click={() => deleteSlide($selectionStore.selectedSlideId)} variant="secondary" disabled={$slideStore.length <= 1}>Delete Slide</Button>
+	<Button on:click={handleDeleteClick} variant="secondary" disabled={$slideStore.length <= 1}>Delete Slide</Button>
 </div>
 
 <div class="stage-wrapper" role="presentation" on:mousedown={() => selectionStore.update(s => ({...s, selectedElementId: null}))}>
@@ -82,6 +97,7 @@
 				class:selected={$selectionStore.selectedSlideId === activeSlide.id && !$selectionStore.selectedElementId}
 				style:width="{$dimensions.width}px"
 				style:height="{$dimensions.height}px"
+				style:--scale-factor={scaleFactor}
 				style={getSlideStyles(activeSlide, $globalSettingsStore)}
 				on:mousedown={(e) => handleSlideClick(e, activeSlide.id)}
 			>
@@ -138,7 +154,7 @@
 		transition: all 0.3s ease;
 		background-size: cover;
 		background-position: center;
-		transform: scale(calc(min(100% / {$dimensions.width}, 100% / {$dimensions.height})));
+		transform: scale(calc(var(--scale-factor)));
 	}
 	.slide.selected {
 		box-shadow: 0 0 0 3px var(--primary-color);

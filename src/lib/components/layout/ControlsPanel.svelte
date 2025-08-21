@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { globalSettingsStore, appUIStore } from '$lib/stores/appStores';
+	import { get } from 'svelte/store';
+	import { globalSettingsStore, appUIStore, slideStore, selectionStore } from '$lib/stores/appStores';
 	import { historyStore } from '$lib/stores/historyStore';
 	import { updateGlobalSettings, updateBrandingKit, addNewSlide } from '$lib/actions/historyActions';
 	import { exportAsZip, exportAsTemplate, importFromTemplate } from '$lib/utils/fileHandlers';
 	import { getSlidePreset, slidePresetOptions } from '$lib/utils/presets';
-	import { activePanel, type ActivePanel } from '$lib/stores/uiStateStore.ts';
-	import { parseTextToSlides } from '$lib/utils/parser.ts';
+	import { activePanel, type ActivePanel } from '$lib/stores/uiStateStore';
+	import { parseTextToSlides } from '$lib/utils/parser';
 
 	import IconButton from '../ui/IconButton.svelte';
 	import CollapsibleCard from '../ui/CollapsibleCard.svelte';
@@ -22,18 +23,17 @@
 	let generatorText = `h1: Welcome Back!\np: Generate slides from text here.`;
 
 	const togglePanel = (panel: ActivePanel) => {
-		if ($activePanel === panel) {
-			activePanel.set(null);
-		} else {
-			activePanel.set(panel);
-		}
+		activePanel.update(current => current === panel ? null : panel);
 	};
 
 	function handleGenerate() {
-		const newSlides = parseTextToSlides(generatorText, $globalSettingsStore.brandingKit.brandColor);
-		addNewSlide(newSlides[0]);
-		if (newSlides.length > 1) {
-			newSlides.slice(1).forEach(slide => addNewSlide(slide));
+		const newSlides = parseTextToSlides(generatorText, get(globalSettingsStore).brandingKit.brandColor);
+		if (newSlides.length > 0) {
+			historyStore.addSnapshot({
+				slides: newSlides,
+				globals: get(globalSettingsStore)
+			});
+			selectionStore.set({ selectedSlideId: newSlides[0].id, selectedElementId: null });
 		}
 	}
 
@@ -56,7 +56,11 @@
 
 	function handleAddManualSlide() {
 		const preset = getSlidePreset(manualSlideType);
-		if (preset) addNewSlide(preset);
+		if (preset) {
+            const currentSlides = get(slideStore);
+            const currentIndex = currentSlides.findIndex(s => s.id === get(selectionStore).selectedSlideId);
+            addNewSlide(preset, currentIndex + 1);
+        }
 	}
 </script>
 
@@ -84,6 +88,7 @@
 			<h2>Project Settings</h2>
 			<Select label="Canvas Aspect Ratio" options={[{ value: '1.91:1', label: 'Landscape (1.91:1)' },{ value: '4:5', label: 'Vertical (4:5)' },{ value: '1:1', label: 'Square (1:1)' }]} bind:value={$globalSettingsStore.aspectRatio} on:change={(e) => updateGlobalSettings({ aspectRatio: e.currentTarget.value })} />
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'branding'}>
 			<h2>Branding Kit</h2>
 			<FileInput label="Brand Logo" accept="image/*" on:change={(e) => updateBrandingKit({ logoUrl: e.detail.fileData })} />
@@ -92,16 +97,19 @@
 			<Checkbox label="Show Logo on All Slides" bind:checked={$globalSettingsStore.brandingKit.showLogoOnAllSlides} on:change={(e) => updateBrandingKit({ showLogoOnAllSlides: e.currentTarget.checked })} />
 			<Button on:click={handleClearBranding} variant="secondary">Clear Saved Branding</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'generator'}>
 			<h2>Generate from Text</h2>
-			<textarea bind:value={generatorText} rows="10" />
+			<textarea bind:value={generatorText} rows="10" placeholder="h1: Title..." />
 			<Button on:click={handleGenerate}>Generate Slides</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'addSlide'}>
 			<h2>Add Slide from Preset</h2>
 			<Select label="Preset Type" options={slidePresetOptions} bind:value={manualSlideType} />
 			<Button on:click={handleAddManualSlide}>Add Slide</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'export'}>
 			<h2>Import / Export</h2>
 			{#if $appUIStore.isExporting}<div class="loading">Exporting...</div>{/if}
