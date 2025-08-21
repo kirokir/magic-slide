@@ -43,6 +43,7 @@ declare module '$env/static/private' {
 	export const PIPX_HOME: string;
 	export const CONDA_SCRIPT: string;
 	export const DOTNET_USE_POLLING_FILE_WATCHER: string;
+	export const npm_node_execpath: string;
 	export const GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: string;
 	export const SHLVL: string;
 	export const BROWSER: string;
@@ -53,6 +54,7 @@ declare module '$env/static/private' {
 	export const ORYX_ENV_TYPE: string;
 	export const NVM_BIN: string;
 	export const VSCODE_IPC_HOOK_CLI: string;
+	export const npm_package_json: string;
 	export const NVM_INC: string;
 	export const CODESPACES: string;
 	export const PIPX_BIN_DIR: string;
@@ -85,16 +87,21 @@ declare module '$env/static/private' {
 	export const RUBY_VERSION: string;
 	export const PROMPT_DIRTRIM: string;
 	export const IRBRC: string;
+	export const npm_config_registry: string;
 	export const TERM: string;
 	export const DOTNET_ROOT: string;
 	export const NVS_DIR: string;
 	export const PHP_ROOT: string;
+	export const npm_config_node_gyp: string;
 	export const PATH: string;
 	export const JAVA_ROOT: string;
 	export const SDKMAN_CANDIDATES_DIR: string;
+	export const npm_package_name: string;
+	export const NODE: string;
 	export const NPM_GLOBAL: string;
 	export const HUGO_DIR: string;
 	export const SHELL_LOGGED_IN: string;
+	export const npm_config_frozen_lockfile: string;
 	export const MY_RUBY_HOME: string;
 	export const LANG: string;
 	export const LS_COLORS: string;
@@ -104,8 +111,11 @@ declare module '$env/static/private' {
 	export const RUBY_ROOT: string;
 	export const SDKMAN_PLATFORM: string;
 	export const TERM_PROGRAM: string;
+	export const npm_lifecycle_script: string;
 	export const SHELL: string;
 	export const GOPATH: string;
+	export const npm_package_version: string;
+	export const npm_lifecycle_event: string;
 	export const npm_config_verify_deps_before_run: string;
 	export const NODE_PATH: string;
 	export const rvm_prefix: string;
@@ -115,7 +125,6 @@ declare module '$env/static/private' {
 	export const ORYX_SDK_STORAGE_BASE_URL: string;
 	export const rvm_version: string;
 	export const CONDA_DIR: string;
-	export const PNPM_PACKAGE_NAME: string;
 	export const DEBIAN_FLAVOR: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const JAVA_HOME: string;
@@ -123,9 +132,12 @@ declare module '$env/static/private' {
 	export const PWD: string;
 	export const INTERNAL_VSCS_TARGET_URL: string;
 	export const GEM_PATH: string;
+	export const npm_execpath: string;
 	export const GITHUB_SERVER_URL: string;
 	export const NVM_CD_FLAGS: string;
+	export const npm_config__jsr_registry: string;
 	export const npm_command: string;
+	export const PNPM_SCRIPT_SRC_DIR: string;
 	export const CODESPACE_NAME: string;
 	export const PYTHON_ROOT: string;
 	export const NVS_OS: string;
@@ -136,6 +148,8 @@ declare module '$env/static/private' {
 	export const RUBY_HOME: string;
 	export const rvm_path: string;
 	export const NUGET_XMLDOC_MODE: string;
+	export const INIT_CWD: string;
+	export const NODE_ENV: string;
 }
 
 /**
@@ -182,6 +196,7 @@ declare module '$env/dynamic/private' {
 		PIPX_HOME: string;
 		CONDA_SCRIPT: string;
 		DOTNET_USE_POLLING_FILE_WATCHER: string;
+		npm_node_execpath: string;
 		GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: string;
 		SHLVL: string;
 		BROWSER: string;
@@ -192,6 +207,7 @@ declare module '$env/dynamic/private' {
 		ORYX_ENV_TYPE: string;
 		NVM_BIN: string;
 		VSCODE_IPC_HOOK_CLI: string;
+		npm_package_json: string;
 		NVM_INC: string;
 		CODESPACES: string;
 		PIPX_BIN_DIR: string;
@@ -224,16 +240,21 @@ declare module '$env/dynamic/private' {
 		RUBY_VERSION: string;
 		PROMPT_DIRTRIM: string;
 		IRBRC: string;
+		npm_config_registry: string;
 		TERM: string;
 		DOTNET_ROOT: string;
 		NVS_DIR: string;
 		PHP_ROOT: string;
+		npm_config_node_gyp: string;
 		PATH: string;
 		JAVA_ROOT: string;
 		SDKMAN_CANDIDATES_DIR: string;
+		npm_package_name: string;
+		NODE: string;
 		NPM_GLOBAL: string;
 		HUGO_DIR: string;
 		SHELL_LOGGED_IN: string;
+		npm_config_frozen_lockfile: string;
 		MY_RUBY_HOME: string;
 		LANG: string;
 		LS_COLORS: string;
@@ -243,8 +264,11 @@ declare module '$env/dynamic/private' {
 		RUBY_ROOT: string;
 		SDKMAN_PLATFORM: string;
 		TERM_PROGRAM: string;
+		npm_lifecycle_script: string;
 		SHELL: string;
 		GOPATH: string;
+		npm_package_version: string;
+		npm_lifecycle_event: string;
 		npm_config_verify_deps_before_run: string;
 		NODE_PATH: string;
 		rvm_prefix: string;
@@ -254,7 +278,6 @@ declare module '$env/dynamic/private' {
 		ORYX_SDK_STORAGE_BASE_URL: string;
 		rvm_version: string;
 		CONDA_DIR: string;
-		PNPM_PACKAGE_NAME: string;
 		DEBIAN_FLAVOR: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		JAVA_HOME: string;
@@ -262,9 +285,12 @@ declare module '$env/dynamic/private' {
 		PWD: string;
 		INTERNAL_VSCS_TARGET_URL: string;
 		GEM_PATH: string;
+		npm_execpath: string;
 		GITHUB_SERVER_URL: string;
 		NVM_CD_FLAGS: string;
+		npm_config__jsr_registry: string;
 		npm_command: string;
+		PNPM_SCRIPT_SRC_DIR: string;
 		CODESPACE_NAME: string;
 		PYTHON_ROOT: string;
 		NVS_OS: string;
@@ -275,6 +301,8 @@ declare module '$env/dynamic/private' {
 		RUBY_HOME: string;
 		rvm_path: string;
 		NUGET_XMLDOC_MODE: string;
+		INIT_CWD: string;
+		NODE_ENV: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
 	}
