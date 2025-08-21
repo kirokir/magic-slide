@@ -26,6 +26,26 @@
 		activePanel.update(current => current === panel ? null : panel);
 	};
 
+	function handleAspectRatioChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		updateGlobalSettings({ aspectRatio: target.value as '1:1' | '1.91:1' | '4:5' });
+	}
+
+    function handleBrandColorChange(e: Event) {
+        const target = e.currentTarget as HTMLInputElement;
+        updateBrandingKit({ brandColor: target.value });
+    }
+
+    function handleBrandFontChange(e: Event) {
+        const target = e.currentTarget as HTMLInputElement;
+        updateBrandingKit({ brandFont: target.value });
+    }
+
+    function handleShowLogoChange(e: Event) {
+        const target = e.currentTarget as HTMLInputElement;
+        updateBrandingKit({ showLogoOnAllSlides: target.checked });
+    }
+
 	function handleGenerate() {
 		const newSlides = parseTextToSlides(generatorText, get(globalSettingsStore).brandingKit.brandColor);
 		if (newSlides.length > 0) {
@@ -45,7 +65,9 @@
 			} catch (e) { console.error('Failed to parse saved branding kit.'); }
 		}
 		globalSettingsStore.subscribe(settings => {
-			localStorage.setItem('magic-slide-branding', JSON.stringify(settings.brandingKit));
+			if (settings?.brandingKit) {
+				localStorage.setItem('magic-slide-branding', JSON.stringify(settings.brandingKit));
+			}
 		});
 	});
 
@@ -59,7 +81,7 @@
 		if (preset) {
             const currentSlides = get(slideStore);
             const currentIndex = currentSlides.findIndex(s => s.id === get(selectionStore).selectedSlideId);
-            addNewSlide(preset, currentIndex + 1);
+            addNewSlide(preset, currentIndex >= 0 ? currentIndex + 1 : currentSlides.length);
         }
 	}
 </script>
@@ -86,21 +108,21 @@
 	<div class="content-area">
 		<CollapsibleCard isOpen={$activePanel === 'project'}>
 			<h2>Project Settings</h2>
-			<Select label="Canvas Aspect Ratio" options={[{ value: '1.91:1', label: 'Landscape (1.91:1)' },{ value: '4:5', label: 'Vertical (4:5)' },{ value: '1:1', label: 'Square (1:1)' }]} bind:value={$globalSettingsStore.aspectRatio} on:change={(e) => updateGlobalSettings({ aspectRatio: e.currentTarget.value })} />
+			<Select label="Canvas Aspect Ratio" options={[{ value: '1.91:1', label: 'Landscape (1.91:1)' },{ value: '4:5', label: 'Vertical (4:5)' },{ value: '1:1', label: 'Square (1:1)' }]} value={$globalSettingsStore.aspectRatio} on:change={handleAspectRatioChange} />
 		</CollapsibleCard>
 
 		<CollapsibleCard isOpen={$activePanel === 'branding'}>
 			<h2>Branding Kit</h2>
 			<FileInput label="Brand Logo" accept="image/*" on:change={(e) => updateBrandingKit({ logoUrl: e.detail.fileData })} />
-			<ColorPicker label="Brand Color" bind:value={$globalSettingsStore.brandingKit.brandColor} on:input={(e) => updateBrandingKit({ brandColor: e.currentTarget.value })} />
-            <TextInput label="Brand Font" bind:value={$globalSettingsStore.brandingKit.brandFont} on:input={(e) => updateBrandingKit({ brandFont: e.currentTarget.value })} />
-			<Checkbox label="Show Logo on All Slides" bind:checked={$globalSettingsStore.brandingKit.showLogoOnAllSlides} on:change={(e) => updateBrandingKit({ showLogoOnAllSlides: e.currentTarget.checked })} />
+			<ColorPicker label="Brand Color" bind:value={$globalSettingsStore.brandingKit.brandColor} on:input={handleBrandColorChange} />
+            <TextInput label="Brand Font" bind:value={$globalSettingsStore.brandingKit.brandFont} on:input={handleBrandFontChange} />
+			<Checkbox label="Show Logo on All Slides" bind:checked={$globalSettingsStore.brandingKit.showLogoOnAllSlides} on:change={handleShowLogoChange} />
 			<Button on:click={handleClearBranding} variant="secondary">Clear Saved Branding</Button>
 		</CollapsibleCard>
 
 		<CollapsibleCard isOpen={$activePanel === 'generator'}>
 			<h2>Generate from Text</h2>
-			<textarea bind:value={generatorText} rows="10" placeholder="h1: Title..." />
+			<textarea bind:value={generatorText} rows={10} placeholder="h1: Title..." />
 			<Button on:click={handleGenerate}>Generate Slides</Button>
 		</CollapsibleCard>
 
