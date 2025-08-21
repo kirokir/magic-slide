@@ -1,0 +1,71 @@
+/* PHASE 1: Glassmorphic Design System */
+
+:root {
+	/* Color Palette */
+	--bg-color: #0f172a;
+	--fg-color: #e2e8f0;
+	--primary-color: #4f46e5;
+	--primary-color-light: #6366f1;
+	--border-color: rgba(255, 255, 255, 0.2);
+	--shadow-color: rgba(0, 0, 0, 0.2);
+	--glass-bg: rgba(30, 41, 59, 0.7);
+	--glass-bg-light: rgba(51, 65, 85, 0.7);
+
+	/* Typography */
+	--font-family-base: 'Inter', sans-serif;
+	--fs-h1: 2.25rem;
+	--fs-p: 1.125rem;
+	--fs-ui: 0.875rem;
+	--fw-bold: 700;
+	--fw-normal: 400;
+
+	/* Layout & Spacing */
+	--border-radius: 16px;
+	--spacing-xs: 4px;
+	--spacing-s: 8px;
+	--spacing-m: 16px;
+	--spacing-l: 24px;
+	--spacing-xl: 32px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--font-family-base);
+	background-color: var(--bg-color);
+	background-image: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+	color: var(--fg-color);
+	line-height: 1.6;
+	overflow-x: hidden;
+}
+
+/* Glassmorphism Utility Class */
+.glass-card {
+	background: var(--glass-bg);
+	backdrop-filter: blur(12px) saturate(150%);
+	-webkit-backdrop-filter: blur(12px) saturate(150%);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--border-color);
+	box-shadow: 0 8px 32px 0 var(--shadow-color);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--glass-bg-light);
+	border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--primary-color);
+}
