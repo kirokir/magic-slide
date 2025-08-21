@@ -1,48 +1,54 @@
+// /src/lib/components/editor/SlideElement.svelte
+
 <script lang="ts">
-	import type { Element, GlobalSettings } from '$lib/types';
-	import { slideStore, selectionStore } from '$lib/stores/appStores';
+	import { selectionStore } from '$lib/stores/appStores';
 	import { interactive } from '$lib/actions/interactive';
+	import { updateElement } from '$lib/actions/historyActions';
+	import type { Element, Gradient } from '$lib/types';
 
 	export let element: Element;
 	export let slideId: string;
-	export let globalSettings: GlobalSettings;
+	export let slideDimensions: { width: number; height: number };
 	
 	$: isSelected = $selectionStore.selectedElementId === element.id;
 
-	$: elementStyles = {
-		...element.styles,
-		fontFamily: element.styles.fontFamily || globalSettings.fontFamily,
-		backgroundColor: element.type === 'cta' ? globalSettings.themeColor : element.styles.backgroundColor
-	};
+	function getGradientStyle(gradient: Gradient) {
+		return `
+			background: linear-gradient(${gradient.angle}deg, ${gradient.from}, ${gradient.to});
+			-webkit-background-clip: text;
+			background-clip: text;
+			color: transparent;
+		`;
+	}
+
+	$: elementDynamicStyles = `
+		transform: translate(${element.x}px, ${element.y}px);
+		width: ${element.width}px;
+		height: ${element.height}px;
+		z-index: ${element.zIndex};
+		font-size: ${element.styles.fontSize || 'inherit'};
+		font-weight: ${element.styles.isBold ? 'bold' : (element.styles.fontWeight || 'normal')};
+		font-style: ${element.styles.isItalic ? 'italic' : 'normal'};
+		text-align: ${element.styles.textAlign || 'left'};
+		color: ${element.styles.color || 'inherit'};
+		background-color: ${element.styles.backgroundColor || 'transparent'};
+		font-family: ${element.styles.fontFamily || 'inherit'};
+		${element.styles.gradient ? getGradientStyle(element.styles.gradient) : ''}
+	`;
 
 	function handleSelect(event: MouseEvent) {
 		event.stopPropagation();
 		selectionStore.set({ selectedSlideId: slideId, selectedElementId: element.id });
 	}
 
-	function updateElementInStore(slideId: string, elementId: string, updates: Partial<Element>) {
-		slideStore.update((slides) => {
-			const slideIndex = slides.findIndex((s) => s.id === slideId);
-			if (slideIndex === -1) return slides;
-
-			const elementIndex = slides[slideIndex].elements.findIndex((e) => e.id === elementId);
-			if (elementIndex === -1) return slides;
-
-			const updatedElement = { ...slides[slideIndex].elements[elementIndex], ...updates };
-			slides[slideIndex].elements[elementIndex] = updatedElement;
-
-			return [...slides];
-		});
-	}
-
 	function handleDrag(e: CustomEvent) {
-		const { id, x, y } = e.detail;
-		updateElementInStore(slideId, id, { x, y });
+		const { x, y } = e.detail;
+		updateElement(slideId, element.id, { x, y });
 	}
 
 	function handleResize(e: CustomEvent) {
-		const { id, width, height, x, y } = e.detail;
-		updateElementInStore(slideId, id, { width, height, x, y });
+		const { width, height, x, y } = e.detail;
+		updateElement(slideId, element.id, { width, height, x, y });
 	}
 
 </script>
@@ -50,21 +56,14 @@
 <div
 	class="element"
 	class:selected={isSelected}
-	style:transform="translate({element.x}px, {element.y}px)"
-	style:width="{element.width}px"
-	style:height="{element.height}px"
-	style:font-size={elementStyles.fontSize}
-	style:font-weight={elementStyles.fontWeight}
-	style:color={elementStyles.color}
-	style:background-color={elementStyles.backgroundColor}
-	style:font-family={elementStyles.fontFamily}
+	style={elementDynamicStyles}
 	on:mousedown={handleSelect}
-	use:interactive={{ id: element.id }}
+	use:interactive={{ id: element.id, slideDimensions }}
 	on:dragmove={handleDrag}
 	on:resizemove={handleResize}
 >
-	{#if element.type === 'logo'}
-		<img src={element.content} alt="logo" />
+	{#if element.type === 'logo' || element.type === 'image'}
+		<img src={element.content} alt={element.type} />
 	{:else}
 		<span>{element.content}</span>
 	{/if}
@@ -82,17 +81,18 @@
 		user-select: none;
 		overflow: hidden;
 		word-break: break-word;
-		text-align: center;
+		box-sizing: border-box; /* Important for resizing */
 	}
 
 	.element.selected {
 		outline: 2px solid var(--primary-color);
-		z-index: 10;
+		z-index: 1000 !important; /* Ensure selected is always on top for interaction */
 	}
 	
 	img {
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
+		pointer-events: none; /* Prevent image from capturing drag events */
 	}
 </style>
