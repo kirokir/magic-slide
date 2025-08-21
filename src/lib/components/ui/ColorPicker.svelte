@@ -1,4 +1,3 @@
-// /src/lib/components/ui/ColorPicker.svelte (CORRECTED)
 
 <script lang="ts">
 	export let value: string;

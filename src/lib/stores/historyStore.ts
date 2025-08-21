@@ -1,4 +1,4 @@
-// /src/lib/stores/historyStore.ts
+
 
 import { writable, get, derived } from 'svelte/store';
 import type { AppState } from '$lib/types';

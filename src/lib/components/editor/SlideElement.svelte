@@ -1,4 +1,4 @@
-// /src/lib/components/editor/SlideElement.svelte
+
 
 <script lang="ts">
 	import { selectionStore } from '$lib/stores/appStores';

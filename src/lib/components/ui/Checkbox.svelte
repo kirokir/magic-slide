@@ -1,4 +1,3 @@
-// /src/lib/components/ui/Checkbox.svelte
 
 <script lang="ts">
 	export let checked: boolean;

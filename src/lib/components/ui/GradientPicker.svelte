@@ -1,4 +1,3 @@
-// /src/lib/components/ui/GradientPicker.svelte
 
 <script lang="ts">
 	import type { Gradient } from '$lib/types';

@@ -1,4 +1,3 @@
-// /src/lib/components/layout/ControlsPanel.svelte (DEFINITIVELY CORRECTED)
 
 <script lang="ts">
 	import { onMount } from 'svelte';

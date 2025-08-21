@@ -1,5 +1,3 @@
-// /src/lib/stores/appStores.ts (CORRECTED)
-
 import { writable, get } from 'svelte/store';
 import type { Slide, GlobalSettings } from '$lib/types';
 import { parseTextToSlides } from '$lib/utils/parser';

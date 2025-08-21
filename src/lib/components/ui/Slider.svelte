@@ -1,4 +1,4 @@
-// /src/lib/components/ui/Slider.svelte
+
 
 <script lang="ts">
 	export let value: number;

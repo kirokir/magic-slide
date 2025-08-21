@@ -1,5 +1,3 @@
-// /src/lib/components/ui/Select.svelte
-
 <script lang="ts">
 	export let value: string;
 	export let label: string;

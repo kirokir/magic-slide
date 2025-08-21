@@ -1,4 +1,3 @@
-// /src/lib/components/ui/FileInput.svelte
 
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
