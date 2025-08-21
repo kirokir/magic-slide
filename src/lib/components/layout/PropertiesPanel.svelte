@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { derived } from 'svelte/store';
 	import { slideStore, selectionStore, globalSettingsStore } from '$lib/stores/appStores';
-	import { updateElement, deleteElement, reorderElement, updateSlide, addNewElement, updateBrandingKit } from '$lib/actions/historyActions';
-	import type { Slide, Element, FilterSettings, Gradient } from '$lib/types';
+	import { updateElement, deleteElement, reorderElement, updateSlide, addNewElement } from '$lib/actions/historyActions';
+	import type { Element, FilterSettings, Gradient } from '$lib/types';
 	import { getElementPreset } from '$lib/utils/presets';
 	
 	import Card from '../ui/Card.svelte';
@@ -36,7 +36,8 @@
 	}
 	$: { if ($selectedSlide) { slideFilters = $selectedSlide.filters; } }
 
-	$: if ($selectedElement) { updateElement($selectedSlide!.id, $selectedElement.id, { content, styles: { fontFamily, textAlign, isBold, isItalic, gradient } }); }
+	$: if ($selectedElement) { updateElement($selectedSlide!.id, $selectedElement.id, { styles: { fontFamily, textAlign, isBold, isItalic, gradient } }); }
+	$: if ($selectedElement?.type === 'heading' || $selectedElement?.type === 'paragraph' || $selectedElement?.type === 'cta') { updateElement($selectedSlide!.id, $selectedElement.id, { content }); }
 	$: if ($selectedSlide && slideFilters !== undefined) { updateSlide($selectedSlide.id, { filters: slideFilters }); }
 
 	function handleAddElement(type: 'heading' | 'paragraph') {
@@ -46,16 +47,16 @@
 	}
 
     function applyBrandingToSelected() {
-        if ($selectedElement) {
-            const { brandFont, brandColor } = $globalSettingsStore.brandingKit;
-            updateElement($selectedSlide!.id, $selectedElement.id, { styles: { fontFamily: brandFont, color: brandColor, gradient: null } });
+        if ($selectedElement && $selectedSlide) {
+            const { brandFont, brandColor } = get(globalSettingsStore).brandingKit;
+            updateElement($selectedSlide.id, $selectedElement.id, { styles: { fontFamily: brandFont, color: brandColor, gradient: null } });
         }
     }
 </script>
 
 <div class="properties-panel-content">
 	<Card>
-		{#if $selectedElement}
+		{#if $selectedElement && $selectedSlide}
 			<h2>Element Properties</h2>
 			{#if $selectedElement.type === 'heading' || $selectedElement.type === 'paragraph' || $selectedElement.type === 'cta'}
 				<TextInput label="Content" bind:value={content} />
