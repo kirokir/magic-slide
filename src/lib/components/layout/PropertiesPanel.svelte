@@ -1,119 +1,115 @@
 <script lang="ts">
 	import { derived } from 'svelte/store';
-	import { slideStore, selectionStore } from '$lib/stores/appStores';
-	import type { Slide, Element } from '$lib/types';
+	import { slideStore, selectionStore, globalSettingsStore } from '$lib/stores/appStores';
+	import { updateElement, deleteElement, reorderElement, updateSlide, addNewElement, updateBrandingKit } from '$lib/actions/historyActions';
+	import type { Slide, Element, FilterSettings, Gradient } from '$lib/types';
+	import { getElementPreset } from '$lib/utils/presets';
+	
 	import Card from '../ui/Card.svelte';
 	import ColorPicker from '../ui/ColorPicker.svelte';
 	import TextInput from '../ui/TextInput.svelte';
+	import FileInput from '../ui/FileInput.svelte';
+	import Button from '../ui/Button.svelte';
+	import Slider from '../ui/Slider.svelte';
+	import GradientPicker from '../ui/GradientPicker.svelte';
 
-	// Derived store to find the currently selected slide
-	const selectedSlide = derived([slideStore, selectionStore], ([$slideStore, $selectionStore]) => {
-		if (!$selectionStore.selectedSlideId) return null;
-		return $slideStore.find((s) => s.id === $selectionStore.selectedSlideId) || null;
-	});
+	const selectedSlide = derived([slideStore, selectionStore], ([$slides, $selection]) => $selection.selectedSlideId ? $slides.find(s => s.id === $selection.selectedSlideId) : null );
+	const selectedElement = derived([selectedSlide, selectionStore], ([$slide, $selection]) => $selection.selectedElementId && $slide ? $slide.elements.find(e => e.id === $selection.selectedElementId) : null );
 
-	// Derived store to find the currently selected element
-	const selectedElement = derived([slideStore, selectionStore], ([$slideStore, $selectionStore]) => {
-		if (!$selectionStore.selectedSlideId || !$selectionStore.selectedElementId) return null;
-		const slide = $slideStore.find((s) => s.id === $selectionStore.selectedSlideId);
-		if (!slide) return null;
-		return slide.elements.find((e) => e.id === $selectionStore.selectedElementId) || null;
-	});
-
-	// Two-way bindable properties
-	let backgroundColor: string;
-	let content: string;
-	let fontSize: string;
-	let fontWeight: string;
-
-	$: if ($selectedSlide && !$selectedElement) {
-		backgroundColor = $selectedSlide.styles.backgroundColor;
+	let content = '';
+	let textAlign: 'left' | 'center' | 'right' = 'left';
+	let isBold = false;
+	let isItalic = false;
+	let gradient: Gradient | null = null;
+    let fontFamily = '';
+	let slideFilters: FilterSettings | null = null;
+	
+	$: {
+		if ($selectedElement && ($selectedElement.type === 'heading' || $selectedElement.type === 'paragraph' || $selectedElement.type === 'cta')) {
+			content = $selectedElement.content;
+			textAlign = $selectedElement.styles.textAlign || 'left';
+			isBold = $selectedElement.styles.isBold || false;
+			isItalic = $selectedElement.styles.isItalic || false;
+			gradient = $selectedElement.styles.gradient || null;
+            fontFamily = $selectedElement.styles.fontFamily || '';
+		}
 	}
-	$: if ($selectedElement) {
-		content = $selectedElement.content;
-		fontSize = $selectedElement.styles.fontSize || '';
-		fontWeight = $selectedElement.styles.fontWeight || '';
-	}
+	$: { if ($selectedSlide) { slideFilters = $selectedSlide.filters; } }
 
-	function updateSlideStyle(key: keyof Slide['styles'], value: any) {
+	$: if ($selectedElement) { updateElement($selectedSlide!.id, $selectedElement.id, { content, styles: { fontFamily, textAlign, isBold, isItalic, gradient } }); }
+	$: if ($selectedSlide && slideFilters !== undefined) { updateSlide($selectedSlide.id, { filters: slideFilters }); }
+
+	function handleAddElement(type: 'heading' | 'paragraph') {
 		if (!$selectedSlide) return;
-		slideStore.update((slides) =>
-			slides.map((s) =>
-				s.id === $selectedSlide!.id ? { ...s, styles: { ...s.styles, [key]: value } } : s
-			)
-		);
+		const preset = getElementPreset(type);
+		addNewElement($selectedSlide.id, preset);
 	}
 
-	function updateElement(key: 'content' | 'styles', value: any) {
-		if (!$selectedElement || !$selectedSlide) return;
-		slideStore.update((slides) => {
-			const slideIndex = slides.findIndex((s) => s.id === $selectedSlide!.id);
-			if (slideIndex === -1) return slides;
-			
-			const elementIndex = slides[slideIndex].elements.findIndex((e) => e.id === $selectedElement!.id);
-			if (elementIndex === -1) return slides;
-
-			if (key === 'content') {
-				slides[slideIndex].elements[elementIndex].content = value;
-			} else if (key === 'styles') {
-				slides[slideIndex].elements[elementIndex].styles = { ...slides[slideIndex].elements[elementIndex].styles, ...value };
-			}
-			return [...slides];
-		});
-	}
-
-	$: updateSlideStyle('backgroundColor', backgroundColor);
-	$: if ($selectedElement) updateElement('content', content);
-	$: if ($selectedElement) updateElement('styles', { fontSize: fontSize });
-	$: if ($selectedElement) updateElement('styles', { fontWeight: fontWeight });
-
+    function applyBrandingToSelected() {
+        if ($selectedElement) {
+            const { brandFont, brandColor } = $globalSettingsStore.brandingKit;
+            updateElement($selectedSlide!.id, $selectedElement.id, { styles: { fontFamily: brandFont, color: brandColor, gradient: null } });
+        }
+    }
 </script>
 
 <div class="properties-panel-content">
 	<Card>
 		{#if $selectedElement}
 			<h2>Element Properties</h2>
-			<div class="prop-group">
-				{#if $selectedElement.type !== 'logo'}
+			{#if $selectedElement.type === 'heading' || $selectedElement.type === 'paragraph' || $selectedElement.type === 'cta'}
 				<TextInput label="Content" bind:value={content} />
-				<TextInput label="Font Size (e.g., 24px)" bind:value={fontSize} />
-				<TextInput label="Font Weight (e.g., 400, 700)" bind:value={fontWeight} />
-				{/if}
-				{#if $selectedElement.type === 'logo'}
-				<p class="info">Logo properties are edited via Drag & Resize on the stage.</p>
-				{/if}
+                <TextInput label="Font Family" placeholder="Inherit from Brand" bind:value={fontFamily} />
+				<div class="style-grid">
+					<Button on:click={() => isBold = !isBold} variant={isBold ? 'primary' : 'secondary'}>B</Button>
+					<Button on:click={() => isItalic = !isItalic} variant={isItalic ? 'primary' : 'secondary'}>I</Button>
+					<Button on:click={() => textAlign = 'left'} variant={textAlign === 'left' ? 'primary' : 'secondary'}>L</Button>
+					<Button on:click={() => textAlign = 'center'} variant={textAlign === 'center' ? 'primary' : 'secondary'}>C</Button>
+					<Button on:click={() => textAlign = 'right'} variant={textAlign === 'right' ? 'primary' : 'secondary'}>R</Button>
+				</div>
+                <Button on:click={applyBrandingToSelected}>Apply Brand Font & Color</Button>
+				<GradientPicker bind:gradient />
+			{/if}
+			<div class="actions-grid">
+				<Button on:click={() => reorderElement($selectedSlide!.id, $selectedElement!.id, 'backward')}>Backward</Button>
+				<Button on:click={() => reorderElement($selectedSlide!.id, $selectedElement!.id, 'forward')}>Forward</Button>
 			</div>
+			<Button on:click={() => deleteElement($selectedSlide!.id, $selectedElement!.id)} variant="secondary">Delete Element</Button>
 		{:else if $selectedSlide}
 			<h2>Slide Properties</h2>
-			<div class="prop-group">
-				<ColorPicker label="Background Color" bind:value={backgroundColor} />
-			</div>
+			<FileInput label="Background Image" accept="image/*" on:change={(e) => updateSlide($selectedSlide!.id, { backgroundImage: e.detail.fileData })} />
+			{#if $selectedSlide.backgroundImage}
+				<Button on:click={() => updateSlide($selectedSlide!.id, { backgroundImage: null })} variant="secondary">Remove Image</Button>
+			{/if}
+			<h3>Filter Overrides</h3>
+			{@const filters = slideFilters ?? $globalSettingsStore.filters}
+			<Slider label="Brightness" bind:value={filters.brightness} min={0} max={200} on:input={() => slideFilters = filters} />
+			<Slider label="Contrast" bind:value={filters.contrast} min={0} max={200} on:input={() => slideFilters = filters} />
+			<Slider label="Saturation" bind:value={filters.saturate} min={0} max={200} on:input={() => slideFilters = filters} />
+			<Slider label="Blur" bind:value={filters.blur} min={0} max={20} on:input={() => slideFilters = filters} />
+			<Button on:click={() => slideFilters = null} variant="secondary" disabled={!$selectedSlide.filters}>Reset to Global</Button>
 		{:else}
-			<h2>Properties Inspector</h2>
-			<p class="placeholder">Select a slide or an element on the stage to see its properties here.</p>
+			<h2>Inspector</h2>
+			<p class="placeholder">Select a slide or an element.</p>
 		{/if}
 	</Card>
+
+	{#if $selectedSlide}
+	<Card>
+		<h2>Add Elements</h2>
+		<div class="actions-grid">
+			<Button on:click={() => handleAddElement('heading')}>Add Heading</Button>
+			<Button on:click={() => handleAddElement('paragraph')}>Add Textbox</Button>
+		</div>
+		<FileInput label="Add Image" accept="image/*" on:change={(e) => addNewElement($selectedSlide!.id, getElementPreset('image', e.detail.fileData))} />
+	</Card>
+	{/if}
 </div>
 
 <style>
-	.properties-panel-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-m);
-	}
-	h2 {
-		margin-bottom: var(--spacing-m);
-		font-size: 1.25rem;
-	}
-	.placeholder, .info {
-		color: #94a3b8;
-		font-size: var(--fs-ui);
-		text-align: center;
-		padding: var(--spacing-l) 0;
-	}
-	.prop-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-m);
-	}
+	.properties-panel-content { display: flex; flex-direction: column; gap: var(--spacing-m); }
+	.style-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--spacing-s); }
+	.actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-m); }
+	h2, h3 { margin: 0; }
+	h3 { font-size: 1rem; margin-top: var(--spacing-m); border-bottom: 1px solid var(--border-color); padding-bottom: var(--spacing-s); }
 </style>

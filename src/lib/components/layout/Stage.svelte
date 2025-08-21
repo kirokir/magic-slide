@@ -1,5 +1,4 @@
-
-	<script lang="ts">
+<script lang="ts">
 	import { derived, get } from 'svelte/store';
 	import { slideStore, globalSettingsStore, selectionStore } from '$lib/stores/appStores';
 	import { deleteSlide } from '$lib/actions/historyActions';
@@ -10,45 +9,20 @@
 	const dimensions = derived(globalSettingsStore, ($globals) => {
 		if (!$globals) return { width: 1080, height: 566 };
 		switch ($globals.aspectRatio) {
-			case '1:1':
-				return { width: 1080, height: 1080 };
-			case '4:5':
-				return { width: 1080, height: 1350 };
-			case '1.91:1':
-			default:
-				return { width: 1080, height: 566 };
+			case '1:1': return { width: 1080, height: 1080, ratio: '1 / 1' };
+			case '4:5': return { width: 1080, height: 1350, ratio: '4 / 5' };
+			case '1.91:1': default: return { width: 1080, height: 566, ratio: '1.91 / 1' };
 		}
 	});
 
-	const slidesWithLogo = derived(
-		[slideStore, globalSettingsStore],
-		([$slideStore, $globals]) => {
+	const slidesWithLogo = derived([slideStore, globalSettingsStore],([$slideStore, $globals]) => {
 			if (!$globals?.brandingKit) return $slideStore;
 			const { logoUrl, showLogoOnAllSlides } = $globals.brandingKit;
-
-			if (!logoUrl || !showLogoOnAllSlides) {
-				return $slideStore.map(slide => ({
-					...slide,
-					elements: slide.elements.filter(el => el.type !== 'logo')
-				}));
-			}
-
+			if (!logoUrl || !showLogoOnAllSlides) return $slideStore.map(s => ({ ...s, elements: s.elements.filter(e => e.type !== 'logo') }));
 			return $slideStore.map((slide) => {
 				const existingLogo = slide.elements.find((el) => el.type === 'logo');
 				const slideDims = get(dimensions);
-
-				const logoElement = {
-					id: existingLogo?.id || createId(),
-					type: 'logo' as const,
-					content: logoUrl,
-					x: existingLogo?.x || (slideDims.width - 120),
-					y: existingLogo?.y || (slideDims.height - 70),
-					width: existingLogo?.width || 100,
-					height: existingLogo?.height || 60,
-					zIndex: 999,
-					styles: {}
-				};
-
+				const logoElement = { id: existingLogo?.id || createId(), type: 'logo' as const, content: logoUrl, x: existingLogo?.x || (slideDims.width - 120), y: existingLogo?.y || (slideDims.height - 70), width: existingLogo?.width || 100, height: existingLogo?.height || 60, zIndex: 999, styles: {} };
 				const otherElements = slide.elements.filter(el => el.type !== 'logo');
 				return { ...slide, elements: [...otherElements, logoElement] };
 			});
@@ -80,81 +54,92 @@
 		const activeFilters = slide.filters ?? globals.filters;
 		return `
 			background-color: ${slide.styles.backgroundColor};
-			${slide.backgroundImage ? `background-image: url(${slide.backgroundImage}); background-size: cover; background-position: center;` : ''}
-			filter: 
-				brightness(${activeFilters.brightness}%) 
-				contrast(${activeFilters.contrast}%) 
-				saturate(${activeFilters.saturate}%) 
-				blur(${activeFilters.blur}px);
+			${slide.backgroundImage ? `background-image: url(${slide.backgroundImage});` : ''}
+			filter: brightness(${activeFilters.brightness}%) contrast(${activeFilters.contrast}%) saturate(${activeFilters.saturate}%) blur(${activeFilters.blur}px);
 		`;
 	}
 </script>
 
-<div class="canvas-controls">
-	<Button on:click={() => navigateSlide('prev')} disabled={$activeSlideIndex <= 0}>Prev</Button>
-	<div id="slide-indicator">
-		{$activeSlideIndex === -1 ? '-' : $activeSlideIndex + 1} / {$slideStore.length}
+<div class="top-controls">
+	<Button on:click={() => historyStore.undo()} disabled={!$historyStore.canUndo}>Undo</Button>
+	<Button on:click={() => historyStore.redo()} disabled={!$historyStore.canRedo} variant="secondary">Redo</Button>
+	<div class="nav-controls">
+		<Button on:click={() => navigateSlide('prev')} disabled={$activeSlideIndex <= 0}>Prev</Button>
+		<div id="slide-indicator">{$activeSlideIndex === -1 ? '-' : $activeSlideIndex + 1} / {$slideStore.length}</div>
+		<Button on:click={() => navigateSlide('next')} disabled={$activeSlideIndex >= $slideStore.length - 1}>Next</Button>
 	</div>
-	<Button on:click={() => navigateSlide('next')} disabled={$activeSlideIndex >= $slideStore.length - 1}>Next</Button>
 	<Button on:click={() => deleteSlide($selectionStore.selectedSlideId)} variant="secondary" disabled={$slideStore.length <= 1}>Delete Slide</Button>
 </div>
 
 <div class="stage-wrapper" role="presentation" on:mousedown={() => selectionStore.update(s => ({...s, selectedElementId: null}))}>
 	{#if $activeSlideIndex !== -1 && $slidesWithLogo && $slidesWithLogo[$activeSlideIndex]}
 		{@const activeSlide = $slidesWithLogo[$activeSlideIndex]}
-		<div
-			id={`slide-${activeSlide.id}`}
-			class="slide"
-			role="document"
-			class:selected={$selectionStore.selectedSlideId === activeSlide.id && !$selectionStore.selectedElementId}
-			style:width="{$dimensions.width}px"
-			style:height="{$dimensions.height}px"
-			style={getSlideStyles(activeSlide, $globalSettingsStore)}
-			on:mousedown={(e) => handleSlideClick(e, activeSlide.id)}
-		>
-			{#each activeSlide.elements.sort((a,b) => a.zIndex - b.zIndex) as element (element.id)}
-				<SlideElement {element} slideId={activeSlide.id} slideDimensions={$dimensions} />
-			{/each}
+		<div class="slide-scaler" style:aspect-ratio={$dimensions.ratio}>
+			<div
+				id={`slide-${activeSlide.id}`}
+				class="slide"
+				role="document"
+				class:selected={$selectionStore.selectedSlideId === activeSlide.id && !$selectionStore.selectedElementId}
+				style:width="{$dimensions.width}px"
+				style:height="{$dimensions.height}px"
+				style={getSlideStyles(activeSlide, $globalSettingsStore)}
+				on:mousedown={(e) => handleSlideClick(e, activeSlide.id)}
+			>
+				{#each activeSlide.elements.sort((a,b) => a.zIndex - b.zIndex) as element (element.id)}
+					<SlideElement {element} slideId={activeSlide.id} slideDimensions={$dimensions} />
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.canvas-controls {
+	.top-controls {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		gap: var(--spacing-m);
 		flex-shrink: 0;
 	}
-
+	.nav-controls {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-m);
+	}
 	#slide-indicator {
 		font-variant-numeric: tabular-nums;
 		padding: 0 var(--spacing-l);
 		font-weight: 500;
 	}
-
 	.stage-wrapper {
 		flex-grow: 1;
 		min-height: 0;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: var(--spacing-xl);
-		overflow: hidden;
+		padding: var(--spacing-l);
 	}
-
-	.slide {
+	.slide-scaler {
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
 		position: relative;
+	}
+	.slide {
+		position: absolute;
+		top: 0;
+		left: 0;
+		transform-origin: top left;
 		overflow: hidden;
-		transform-origin: center center;
 		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 		border-radius: 8px;
 		border: 1px solid var(--border-color);
-		transition: box-shadow 0.2s, filter 0.2s ease-in-out, width 0.3s ease, height 0.3s ease;
-		flex-shrink: 0;
+		transition: all 0.3s ease;
+		background-size: cover;
+		background-position: center;
+		transform: scale(calc(min(100% / {$dimensions.width}, 100% / {$dimensions.height})));
 	}
-
 	.slide.selected {
 		box-shadow: 0 0 0 3px var(--primary-color);
 	}

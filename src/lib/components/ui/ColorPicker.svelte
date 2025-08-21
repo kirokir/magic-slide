@@ -1,15 +1,13 @@
-
 <script lang="ts">
-	export let value: string;
+	export let value: string | undefined | null;
 	export let label: string;
 </script>
 
 <div class="color-picker-group">
 	<label for={label}>{label}</label>
 	<div class="picker-wrapper">
-		<input type="color" id={label} bind:value />
-		<!-- This is the fix: Check if 'value' is truthy before calling toUpperCase() -->
-		<span>{value ? value.toUpperCase() : ''}</span>
+		<input type="color" id={label} value={value || '#000000'} on:input|currentTarget={e => value = e.value} />
+		<span>{value ? value.toUpperCase() : '#------'}</span>
 	</div>
 </div>
 
