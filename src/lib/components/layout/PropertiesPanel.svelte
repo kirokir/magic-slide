@@ -23,6 +23,7 @@
 	let gradient: Gradient | null = null;
     let fontFamily = '';
 	let slideFilters: FilterSettings | null = null;
+	let filters: FilterSettings;
 	
 	$: {
 		if ($selectedElement && ($selectedElement.type === 'heading' || $selectedElement.type === 'paragraph' || $selectedElement.type === 'cta')) {
@@ -35,6 +36,8 @@
 		}
 	}
 	$: { if ($selectedSlide) { slideFilters = $selectedSlide.filters; } }
+	
+	$: filters = slideFilters ?? $globalSettingsStore.filters;
 
 	$: if ($selectedElement) { updateElement($selectedSlide!.id, $selectedElement.id, { styles: { fontFamily, textAlign, isBold, isItalic, gradient } }); }
 	$: if ($selectedElement?.type === 'heading' || $selectedElement?.type === 'paragraph' || $selectedElement?.type === 'cta') { updateElement($selectedSlide!.id, $selectedElement.id, { content }); }
@@ -43,7 +46,8 @@
 	function handleAddElement(type: 'heading' | 'paragraph') {
 		if (!$selectedSlide) return;
 		const preset = getElementPreset(type);
-		addNewElement($selectedSlide.id, preset);
+
+addNewElement($selectedSlide.id, preset);
 	}
 
     function applyBrandingToSelected() {
@@ -76,14 +80,13 @@
 				<Button on:click={() => reorderElement($selectedSlide!.id, $selectedElement!.id, 'forward')}>Forward</Button>
 			</div>
 			<Button on:click={() => deleteElement($selectedSlide!.id, $selectedElement!.id)} variant="secondary">Delete Element</Button>
-		{:else if $selectedSlide}
+		{:else if $selectedSlide && filters}
 			<h2>Slide Properties</h2>
 			<FileInput label="Background Image" accept="image/*" on:change={(e) => updateSlide($selectedSlide!.id, { backgroundImage: e.detail.fileData })} />
 			{#if $selectedSlide.backgroundImage}
 				<Button on:click={() => updateSlide($selectedSlide!.id, { backgroundImage: null })} variant="secondary">Remove Image</Button>
 			{/if}
 			<h3>Filter Overrides</h3>
-			{@const filters = slideFilters ?? $globalSettingsStore.filters}
 			<Slider label="Brightness" bind:value={filters.brightness} min={0} max={200} on:input={() => (slideFilters = filters)} />
 			<Slider label="Contrast" bind:value={filters.contrast} min={0} max={200} on:input={() => (slideFilters = filters)} />
 			<Slider label="Saturation" bind:value={filters.saturate} min={0} max={200} on:input={() => (slideFilters = filters)} />
