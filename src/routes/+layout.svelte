@@ -1,8 +1,18 @@
-<script>
-	import '../global.css';
-	import Toast from '$lib/components/ui/Toast.svelte';
+<script lang="ts">
+  import '../global.css';
+  import Toast from '$lib/components/ui/Toast.svelte';
 </script>
 
-<slot />
+<div class="app-container">
+  <slot />
+  <Toast />
+</div>
 
-<Toast />
+<style>
+  .app-container {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: var(--bg-secondary);
+  }
+</style>

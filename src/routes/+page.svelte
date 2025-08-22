@@ -1,49 +1,63 @@
 <script lang="ts">
-	import { globalSettingsStore } from '$lib/stores/appStores';
-	import ControlsPanel from '$lib/components/layout/ControlsPanel.svelte';
-	import PropertiesPanel from '$lib/components/layout/PropertiesPanel.svelte';
-	import Stage from '$lib/components/layout/Stage.svelte';
+  import ControlsPanel from '$lib/components/layout/ControlsPanel.svelte';
+  import Stage from '$lib/components/layout/Stage.svelte';
+  import PropertiesPanel from '$lib/components/layout/PropertiesPanel.svelte';
+  import { selectionStore } from '$lib/stores/appStores';
 </script>
 
-<main style={`background-color: ${$globalSettingsStore.appBackgroundColor};`}>
-	<div class="left-panel">
-		<ControlsPanel />
-	</div>
-	<div class="center-panel">
-		<Stage />
-	</div>
-	<div class="right-panel">
-		<PropertiesPanel />
-	</div>
-</main>
+<div class="app-layout">
+  <aside class="left-panel">
+    <ControlsPanel />
+  </aside>
+
+  <main class="main-panel">
+    <Stage />
+  </main>
+
+  <aside class="right-panel" class:hidden={!$selectionStore.selectedSlideId}>
+    <PropertiesPanel />
+  </aside>
+</div>
 
 <style>
-	main {
-		display: grid;
-		grid-template-columns: 88px 350px 1fr 350px;
-		height: 100vh;
-		gap: var(--spacing-m);
-		padding: var(--spacing-m);
-		transition: background-color 0.3s ease;
-	}
-	.left-panel {
-		grid-column: 1 / 3;
-	}
-	.center-panel {
-		grid-column: 3 / 4;
-	}
-	.left-panel,
-	.right-panel {
-		height: calc(100vh - var(--spacing-m) * 2);
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-	}
-	.center-panel {
-		height: calc(100vh - var(--spacing-m) * 2);
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-m);
-	}
+  .app-layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .left-panel {
+    flex-shrink: 0;
+    width: 320px;
+    height: 100%;
+    background: var(--bg-primary);
+    border-right: var(--border);
+    overflow-y: auto;
+  }
+
+  .main-panel {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .right-panel {
+    flex-shrink: 0;
+    width: 300px;
+    height: 100%;
+    background: var(--bg-primary);
+    border-left: var(--border);
+    transition: width 0.2s ease, opacity 0.2s ease;
+    overflow-y: auto;
+  }
+
+  .right-panel.hidden {
+    width: 0;
+    opacity: 0;
+    padding: 0;
+    border-left: none;
+  }
 </style>
