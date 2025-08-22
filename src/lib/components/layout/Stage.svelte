@@ -76,14 +76,24 @@
 </script>
 
 <div class="top-controls" role="toolbar" aria-label="Presentation controls" tabindex="0">
-	<Button on:click={() => historyStore.undo()} disabled={!$canUndo}>Undo</Button>
-	<Button on:click={() => historyStore.redo()} disabled={!$canRedo} variant="secondary">Redo</Button>
+	<Button on:click={() => historyStore.undo()} disabled={!$canUndo} title="Undo">
+		<svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+	</Button>
+	<Button on:click={() => historyStore.redo()} disabled={!$canRedo} variant="secondary" title="Redo">
+		<svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" /></svg>
+	</Button>
 	<div class="nav-controls" role="group" aria-label="Slide navigation">
-		<Button on:click={() => navigateSlide('prev')} disabled={$activeSlideIndex <= 0}>Prev</Button>
+		<Button on:click={() => navigateSlide('prev')} disabled={$activeSlideIndex <= 0} title="Previous Slide">
+			<svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+		</Button>
 		<div id="slide-indicator" aria-live="polite">{$activeSlideIndex === -1 ? '-' : $activeSlideIndex + 1} / {$slideStore.length}</div>
-		<Button on:click={() => navigateSlide('next')} disabled={$activeSlideIndex >= $slideStore.length - 1}>Next</Button>
+		<Button on:click={() => navigateSlide('next')} disabled={$activeSlideIndex >= $slideStore.length - 1} title="Next Slide">
+			<svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+		</Button>
 	</div>
-	<Button on:click={handleDeleteClick} variant="secondary" disabled={$slideStore.length <= 1}>Delete Slide</Button>
+	<Button on:click={handleDeleteClick} variant="secondary" disabled={$slideStore.length <= 1} title="Delete Slide">
+		<svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.067-2.09.92-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+	</Button>
 </div>
 
 <div class="stage-wrapper" role="presentation" on:mousedown={() => selectionStore.update(s => ({...s, selectedElementId: null}))}>
@@ -158,5 +168,9 @@
 	}
 	.slide.selected {
 		box-shadow: 0 0 0 3px var(--primary-color);
+	}
+	.top-controls :global(button) {
+		min-width: 44px;
+		padding: var(--spacing-s);
 	}
 </style>
