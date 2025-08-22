@@ -9,11 +9,9 @@
 	<aside class="left-panel">
 		<ControlsPanel />
 	</aside>
-
 	<main class="main-panel">
 		<Stage />
 	</main>
-
 	<aside class="right-panel" class:hidden={!$selectionStore.selectedSlideId}>
 		<PropertiesPanel />
 	</aside>
@@ -29,7 +27,7 @@
 		gap: var(--spacing-m);
 	}
 	.left-panel {
-		flex: 0 0 450px; /* Combined width of icon bar and panel */
+		flex: 0 0 450px;
 		height: 100%;
 		overflow-y: auto;
 	}
