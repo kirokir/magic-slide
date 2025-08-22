@@ -1,4 +1,4 @@
-// /src/lib/components/ui/CollapsibleCard.svelte
+
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	export let isOpen = false;

@@ -1,4 +1,4 @@
-// /src/lib/components/ui/IconButton.svelte
+
 <script lang="ts">
 	export let label: string;
 	export let isActive = false;

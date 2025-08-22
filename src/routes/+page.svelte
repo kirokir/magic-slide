@@ -28,13 +28,11 @@
 		padding: var(--spacing-m);
 		gap: var(--spacing-m);
 	}
-
 	.left-panel {
-		flex: 0 0 350px;
+		flex: 0 0 450px; /* Combined width of icon bar and panel */
 		height: 100%;
 		overflow-y: auto;
 	}
-
 	.main-panel {
 		flex: 1 1 0;
 		height: 100%;
@@ -42,14 +40,12 @@
 		flex-direction: column;
 		min-width: 0;
 	}
-
 	.right-panel {
 		flex: 0 0 350px;
 		height: 100%;
 		overflow-y: auto;
 		transition: flex-basis 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 	}
-
 	.right-panel.hidden {
 		flex-basis: 0;
 		opacity: 0;
