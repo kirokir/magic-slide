@@ -8,6 +8,7 @@
 	import { getSlidePreset, slidePresetOptions } from '$lib/utils/presets';
 	import { activePanel, type ActivePanel } from '$lib/stores/uiStateStore';
 	import { parseTextToSlides } from '$lib/utils/parser';
+
 	import IconButton from '../ui/IconButton.svelte';
 	import CollapsibleCard from '../ui/CollapsibleCard.svelte';
 	import Button from '../ui/Button.svelte';
@@ -21,7 +22,9 @@
 	let manualSlideType: string = 'titleAndContent';
 	let generatorText = `h1: Welcome Back!\np: Generate slides from text here.`;
 
-	const togglePanel = (panel: ActivePanel) => activePanel.update(current => current === panel ? null : panel);
+	const togglePanel = (panel: ActivePanel) => {
+		activePanel.update(current => current === panel ? null : panel);
+	};
 
 	function handleAspectRatioChange(e: Event) {
 		const target = e.currentTarget as HTMLSelectElement;
@@ -46,7 +49,10 @@
 	function handleGenerate() {
 		const newSlides = parseTextToSlides(generatorText, get(globalSettingsStore).brandingKit.brandColor);
 		if (newSlides.length > 0) {
-			historyStore.addSnapshot({ slides: newSlides, globals: get(globalSettingsStore) });
+			historyStore.addSnapshot({
+				slides: newSlides,
+				globals: get(globalSettingsStore)
+			});
 			selectionStore.set({ selectedSlideId: newSlides[0].id, selectedElementId: null });
 		}
 	}
@@ -104,6 +110,7 @@
 			<h2>Project Settings</h2>
 			<Select label="Canvas Aspect Ratio" options={[{ value: '1.91:1', label: 'Landscape (1.91:1)' },{ value: '4:5', label: 'Vertical (4:5)' },{ value: '1:1', label: 'Square (1:1)' }]} value={$globalSettingsStore.aspectRatio} on:change={handleAspectRatioChange} />
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'branding'}>
 			<h2>Branding Kit</h2>
 			<FileInput label="Brand Logo" accept="image/*" on:change={(e) => updateBrandingKit({ logoUrl: e.detail.fileData })} />
@@ -112,16 +119,19 @@
 			<Checkbox label="Show Logo on All Slides" bind:checked={$globalSettingsStore.brandingKit.showLogoOnAllSlides} on:change={handleShowLogoChange} />
 			<Button on:click={handleClearBranding} variant="secondary">Clear Saved Branding</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'generator'}>
 			<h2>Generate from Text</h2>
 			<textarea bind:value={generatorText} rows={10} placeholder="h1: Title..." />
 			<Button on:click={handleGenerate}>Generate Slides</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'addSlide'}>
 			<h2>Add Slide from Preset</h2>
 			<Select label="Preset Type" options={slidePresetOptions} bind:value={manualSlideType} />
 			<Button on:click={handleAddManualSlide}>Add Slide</Button>
 		</CollapsibleCard>
+
 		<CollapsibleCard isOpen={$activePanel === 'export'}>
 			<h2>Import / Export</h2>
 			{#if $appUIStore.isExporting}<div class="loading">Exporting...</div>{/if}
