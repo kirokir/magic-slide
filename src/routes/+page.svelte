@@ -1,63 +1,60 @@
 <script lang="ts">
-  import ControlsPanel from '$lib/components/layout/ControlsPanel.svelte';
-  import Stage from '$lib/components/layout/Stage.svelte';
-  import PropertiesPanel from '$lib/components/layout/PropertiesPanel.svelte';
-  import { selectionStore } from '$lib/stores/appStores';
+	import { globalSettingsStore, selectionStore } from '$lib/stores/appStores';
+	import ControlsPanel from '$lib/components/layout/ControlsPanel.svelte';
+	import PropertiesPanel from '$lib/components/layout/PropertiesPanel.svelte';
+	import Stage from '$lib/components/layout/Stage.svelte';
 </script>
 
-<div class="app-layout">
-  <aside class="left-panel">
-    <ControlsPanel />
-  </aside>
+<div class="app-layout" style={`background-color: ${$globalSettingsStore.appBackgroundColor};`}>
+	<aside class="left-panel">
+		<ControlsPanel />
+	</aside>
 
-  <main class="main-panel">
-    <Stage />
-  </main>
+	<main class="main-panel">
+		<Stage />
+	</main>
 
-  <aside class="right-panel" class:hidden={!$selectionStore.selectedSlideId}>
-    <PropertiesPanel />
-  </aside>
+	<aside class="right-panel" class:hidden={!$selectionStore.selectedSlideId}>
+		<PropertiesPanel />
+	</aside>
 </div>
 
 <style>
-  .app-layout {
-    display: flex;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-  }
+	.app-layout {
+		display: flex;
+		height: 100vh;
+		width: 100vw;
+		overflow: hidden;
+		padding: var(--spacing-m);
+		gap: var(--spacing-m);
+	}
 
-  .left-panel {
-    flex-shrink: 0;
-    width: 320px;
-    height: 100%;
-    background: var(--bg-primary);
-    border-right: var(--border);
-    overflow-y: auto;
-  }
+	.left-panel {
+		flex: 0 0 350px;
+		height: 100%;
+		overflow-y: auto;
+	}
 
-  .main-panel {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
+	.main-panel {
+		flex: 1 1 0;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
 
-  .right-panel {
-    flex-shrink: 0;
-    width: 300px;
-    height: 100%;
-    background: var(--bg-primary);
-    border-left: var(--border);
-    transition: width 0.2s ease, opacity 0.2s ease;
-    overflow-y: auto;
-  }
+	.right-panel {
+		flex: 0 0 350px;
+		height: 100%;
+		overflow-y: auto;
+		transition: flex-basis 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	}
 
-  .right-panel.hidden {
-    width: 0;
-    opacity: 0;
-    padding: 0;
-    border-left: none;
-  }
+	.right-panel.hidden {
+		flex-basis: 0;
+		opacity: 0;
+		padding: 0;
+		margin: 0;
+		overflow: hidden;
+	}
 </style>
