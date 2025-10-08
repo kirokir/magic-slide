@@ -1,0 +1,12 @@
+{
+    "default": {
+        "type": "static",
+        "html": "<h1>{{title}}</h1><p>{{description}}</p><img src='{{image}}' alt='Product'>",
+        "css": "h1 { font-size: 24px; color: blue; } p { font-size: 16px; }"
+    },
+    "product-catalog": {
+        "type": "interactive",
+        "html": "<div class='product'><h2>Product Name</h2><p>Details here...</p></div>",
+        "css": ".product { border: 1px solid #ccc; padding: 10px; margin: 10px; }"
+    }
+}

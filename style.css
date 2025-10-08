@@ -1,0 +1,51 @@
+/* Global Styles */
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+#app { max-width: 1200px; margin: 0 auto; }
+.toolbar { background: #333; color: white; padding: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.toolbar button { background: #555; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+.toolbar button:hover { background: #666; }
+.export-group { display: flex; gap: 5px; }
+#font-selector { padding: 5px; }
+.editor-container { display: flex; flex-direction: column; height: 80vh; }
+.catalog-editor { 
+    flex: 1; 
+    border: 1px solid #ccc; 
+    padding: 20px; 
+    overflow: auto; 
+    background: white; 
+    font-size: 16px; 
+    transform-origin: top left;
+    transform: scale(1); /* Default zoom */
+    min-height: 100%; 
+}
+#page-nav { padding: 10px; background: #eee; display: flex; justify-content: center; gap: 10px; align-items: center; }
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.5); 
+}
+.modal-content { 
+    background: white; 
+    margin: 15% auto; 
+    padding: 20px; 
+    border: none; 
+    width: 80%; 
+    max-width: 600px; 
+}
+.close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+.close:hover { color: black; }
+label { display: block; margin: 10px 0; }
+textarea { width: 100%; }
+.status { position: fixed; bottom: 10px; right: 10px; background: #007bff; color: white; padding: 10px; border-radius: 5px; display: none; }
+
+/* Font-specific styles (applied dynamically) */
+.font-arial { font-family: Arial, sans-serif; }
+.font-verdana { font-family: Verdana, sans-serif; }
+.font-georgia { font-family: Georgia, serif; }
+.font-times { font-family: 'Times New Roman', serif; }
+.font-courier { font-family: 'Courier New', monospace; }
+.font-impact { font-family: Impact, sans-serif; }
