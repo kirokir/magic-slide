@@ -1,27 +1,44 @@
 {
-    "product-card": {
+    "cover-classic": {
+        "name": "Classic Cover",
         "type": "static",
-        "html": "<div class=\"product-card\"><img src=\"{{image}}\"><h2>{{title}}</h2><p>{{price}}</p><button>Add to Cart</button></div>",
-        "css": ".product-card { border: 1px solid #ccc; padding: 10px; border-radius: 8px; text-align: center; } button { background: var(--accent-color); color: white; border: none; padding: 8px; border-radius: 4px; }"
+        "html": "<div class=\"cover-container\" style=\"background-image: url({{bgImage}});\">\n    <div class=\"cover-overlay\" style=\"background-color: {{overlayColor | rgba(0,0,0,0.5)}};\">\n        <h2 class=\"cover-header\">{{headerText | Our Collection}}</h2>\n        <h1 class=\"cover-title\">{{mainTitle | Product Catalog}}</h1>\n        <p class=\"cover-footer\">{{footerText | 2024 Edition}}</p>\n    </div>\n</div>",
+        "css": ".cover-container { width: 100%; height: 100%; background-size: cover; background-position: center; color: white; display: flex; justify-content: center; align-items: center; text-align: center; } .cover-overlay { padding: 40px; } .cover-header { font-size: 1.5rem; font-weight: 300; border-bottom: 2px solid white; padding-bottom: 10px; margin-bottom: 20px; } .cover-title { font-size: 4rem; font-weight: bold; } .cover-footer { margin-top: 30px; font-style: italic; }"
     },
-    "newsletter": {
+    "index": {
+        "name": "Table of Contents",
+        "type": "index",
+        "html": "<div class=\"index-container\">\n    <h1>{{indexTitle | Table of Contents}}</h1>\n    <div id=\"toc-list\"></div>\n</div>",
+        "css": ".index-container { padding: 50px; font-family: 'Georgia', serif; } .index-container h1 { border-bottom: 1px solid #ccc; padding-bottom: 15px; margin-bottom: 20px; } .toc-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted #eee; } .toc-product-name { } .toc-page-number { font-weight: bold; }"
+    },
+    "product-list": {
+        "name": "Product List",
+        "type": "product",
+        "html": "<div class=\"product-grid-container\">\n    <h1>{{pageTitle | Our Products}}</h1>\n    <div class=\"product-grid\"></div>\n</div>",
+        "css": ".product-grid-container { padding: 40px; } .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; } .product-card { border: 1px solid #eee; padding: 15px; text-align: center; cursor: pointer; } .product-card:hover { box-shadow: 0 0 10px rgba(0,0,0,0.1); } .product-card img { max-width: 100%; height: 150px; object-fit: contain; margin-bottom: 10px; } .product-name { font-weight: bold; } .product-code { font-size: 0.8rem; color: #888; }"
+    },
+    "freestyle": {
+        "name": "Freestyle (Blank Canvas)",
         "type": "interactive",
-        "html": "<table><tr><td style=\"background: var(--accent-color); color: white;\"><h1>{{header}}</h1></td></tr><tr><td>{{content}}</td></tr></table>",
-        "css": "table { width: 100%; border-collapse: collapse; font-family: Arial; } td { padding: 20px; }"
+        "html": "",
+        "css": ""
     },
-    "flyer": {
+    "product-comparison": {
+        "name": "Product Comparison Table",
         "type": "static",
-        "html": "<div class=\"flyer\"><h1 style=\"color: var(--accent-color);\">{{event}}</h1><p>{{details}} <img src=\"{{logo}}\"></p><div>{{date}} | {{location}}</div></div>",
-        "css": ".flyer { text-align: center; background: linear-gradient(to bottom, #fff, #f0f0f0); padding: 40px; border-radius: 12px; }"
+        "html": "<div class=\"comparison-container\">\n    <h1>{{tableTitle | Feature Comparison}}</h1>\n    <table>\n        <thead>\n            <tr>\n                <th>Feature</th>\n                <th>{{product1Name | Product A}}</th>\n                <th>{{product2Name | Product B}}</th>\n                <th>{{product3Name | Product C}}</th>\n            </tr>\n        </thead>\n        <tbody>\n            <tr><td>{{feature1Label | Feature 1}}</td><td>{{product1Feature1 | Yes}}</td><td>{{product2Feature1 | Yes}}</td><td>{{product3Feature1 | No}}</td></tr>\n            <tr><td>{{feature2Label | Feature 2}}</td><td>{{product1Feature2 | 10kg}}</td><td>{{product2Feature2 | 12kg}}</td><td>{{product3Feature2 | 9kg}}</td></tr>\n            <tr><td>{{feature3Label | Feature 3}}</td><td>{{product1Feature3 | Red}}</td><td>{{product2Feature3 | Blue}}</td><td>{{product3Feature3 | Black}}</td></tr>\n            <tr><td>{{feature4Label | Feature 4}}</td><td>{{product1Feature4 | $100}}</td><td>{{product2Feature4 | $120}}</td><td>{{product3Feature4 | $90}}</td></tr>\n        </tbody>\n    </table>\n</div>",
+        "css": ".comparison-container { padding: 40px; } .comparison-container h1 { text-align: center; margin-bottom: 30px; } table { width: 100%; border-collapse: collapse; } th, td { padding: 12px; border: 1px solid #ddd; text-align: center; } thead { background-color: #f2f2f2; font-weight: bold; } tbody tr:nth-child(even) { background-color: #f9f9f9; }"
     },
-    "portfolio": {
-        "type": "interactive",
-        "html": "<div class=\"portfolio-item\"><img src=\"{{image}}\"><h3>{{project}}</h3><p>{{description}}</p></div>",
-        "css": ".portfolio-item { display: flex; gap: 20px; margin: 20px 0; border-bottom: 1px solid #eee; } img { width: 200px; height: 150px; object-fit: cover; }"
-    },
-    "minimal": {
+    "full-page-feature": {
+        "name": "Full Page Feature",
         "type": "static",
-        "html": "<h1>{{title}}</h1><div class=\"content\">{{body}}</div>",
-        "css": "h1 { font-size: 48px; text-align: center; margin-bottom: 20px; } .content { font-size: 18px; line-height: 1.6; }"
+        "html": "<div class=\"feature-split\" style=\"--accent: {{accentColor | #007bff}}\">\n    <div class=\"feature-image\" style=\"background-image: url({{imageUrl}});\"></div>\n    <div class=\"feature-content\">\n        <h2>{{tagline | INNOVATIVE DESIGN}}</h2>\n        <h1>{{title | A New Perspective}}</h1>\n        <p>{{description | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.}}</p>\n        <button class=\"feature-button\">Learn More</button>\n    </div>\n</div>",
+        "css": ".feature-split { display: grid; grid-template-columns: 1fr 1fr; width: 100%; height: 100%; } .feature-image { background-size: cover; background-position: center; } .feature-content { padding: 60px; display: flex; flex-direction: column; justify-content: center; } .feature-content h2 { color: var(--accent); font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; } .feature-content h1 { font-size: 3rem; margin-bottom: 20px; } .feature-content p { font-size: 1rem; line-height: 1.6; margin-bottom: 30px; color: #555; } .feature-button { background-color: var(--accent); color: white; border: none; padding: 15px 30px; font-size: 1rem; cursor: pointer; align-self: flex-start; }"
+    },
+    "testimonial-showcase": {
+        "name": "Testimonial Showcase",
+        "type": "static",
+        "html": "<div class=\"testimonial-container\">\n    <div class=\"testimonial-image-wrapper\">\n        <img src=\"{{authorImage}}\" alt=\"Author\">\n    </div>\n    <div class=\"testimonial-quote\">“{{quoteText | This product has completely changed our workflow. Highly recommended for any serious professional.}}”</div>\n    <div class=\"testimonial-author-info\">\n        <p class=\"author-name\">{{authorName | Jane Doe}}</p>\n        <p class=\"author-title\">{{authorTitle | CEO, ExampleCorp}}</p>\n    </div>\n</div>",
+        "css": ".testimonial-container { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 50px; height: 100%; } .testimonial-image-wrapper { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; margin-bottom: 30px; box-shadow: var(--main-shadow); } .testimonial-image-wrapper img { width: 100%; height: 100%; object-fit: cover; } .testimonial-quote { font-size: 2rem; font-style: italic; line-height: 1.4; margin-bottom: 30px; max-width: 80%; } .author-name { font-weight: bold; font-size: 1.2rem; } .author-title { color: #777; }"
     }
 }

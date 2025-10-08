@@ -3,70 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catalog Builder</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Advanced Catalog Builder</title>
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    
+    <!-- Local Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <header class="toolbar">
-            <span>Catalog Builder</span>
-            <span id="page-info">Page 1 of 1</span>
-            <div class="toolbar-actions">
-                <button id="zoom-out">-</button>
-                <button id="zoom-in">+</button>
-                <span id="zoom-level">100%</span>
-                <button id="zoom-fit">Fit</button>
-                <button id="load">Load</button>
-                <button id="save">Save</button>
-                <button id="export">Export</button>
+
+<div id="app-container" class="app-container">
+    <!-- Header Bar -->
+    <header class="header-bar">
+        <div class="logo-title">Catalog Builder</div>
+        <div class="page-tabs-container">
+            <ul id="page-tabs" class="page-tabs"></ul>
+        </div>
+        <button id="add-page-btn" class="add-page-btn" title="Add New Page" aria-label="Add New Page">+</button>
+        <div class="global-actions">
+            <button id="undo-btn" class="btn" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+            <button id="redo-btn" class="btn" title="Redo (Ctrl+Y)" aria-label="Redo">↷</button>
+            <div class="zoom-controls">
+                <button id="zoom-out-btn" class="btn" aria-label="Zoom Out">-</button>
+                <span id="zoom-display" style="margin: 0 10px; font-weight: bold;">100%</span>
+                <button id="zoom-in-btn" class="btn" aria-label="Zoom In">+</button>
+                <button id="zoom-fit-btn" class="btn" style="margin-left: 5px;" title="Fit to screen">Fit</button>
             </div>
-        </header>
-
-        <div class="main-container">
-            <aside class="sidebar">
-                <h3>Page Properties</h3>
-                <label>Page Name: <input type="text" id="page-name" value="Page 1"></label>
-                <label>Template:
-                    <select id="template-select">
-                        <option value="cover">Cover</option>
-                        <option value="content">Content</option>
-                    </select>
-                </label>
-                <label>Classic Content: <input type="text" id="classic-content" value="Product Details"></label>
-                <label>Image: <input type="file" id="image-upload" accept="image/*"></label>
-                <label>Overlay Color: <input type="color" id="overlay-color" value="#00000080"></label>
-                <label>Header Text: <input type="text" id="header-text" value="Welcome"></label>
-                <label>Main Title: <input type="text" id="main-title" value="Catalog 2025"></label>
-                <label>Footer Text: <input type="text" id="footer-text" value="© 2025 Company"></label>
-                <button id="create-template">Create Custom Template</button>
-            </aside>
-
-            <main class="editor-container">
-                <div id="editor" class="catalog-editor" contenteditable="true">
-                    <div class="template-content">
-                        <h1>Catalog 2025</h1>
-                        <p>© 2025 Company</p>
-                    </div>
+            <button id="load-project-btn" class="btn">Load</button>
+            <input type="file" id="load-project-input" accept=".json" style="display:none;">
+            <button id="save-project-btn" class="btn" title="Save Project (Ctrl+S)">Save</button>
+            <div class="dropdown">
+                <button class="btn btn-primary">Export</button>
+                <div id="export-dropdown" class="dropdown-content">
+                    <a href="#" id="export-png-btn">Export Current Page (PNG)</a>
+                    <a href="#" id="export-jpeg-btn">Export Current Page (JPEG)</a>
+                    <a href="#" id="export-html-btn">Export Current Page (HTML)</a>
+                    <a href="#" id="export-pdf-btn">Export All Pages (PDF)</a>
                 </div>
-            </main>
-        </div>
-
-        <!-- Template Modal -->
-        <div id="template-modal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Create Custom Template</h2>
-                <label>Template Name: <input type="text" id="template-name"></label>
-                <label>HTML: <textarea id="template-html" rows="5">{{title}} - {{content}}</textarea></label>
-                <label>CSS: <textarea id="template-css" rows="3">h1 { font-size: 24px; }</textarea></label>
-                <button id="save-template">Save Template</button>
             </div>
         </div>
+    </header>
 
-        <div id="status" class="status"></div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Inspector Panel (Left) -->
+        <aside id="inspector-panel" class="inspector-panel"></aside>
+
+        <!-- Preview Panel (Right) -->
+        <section class="preview-panel" id="preview-panel">
+            <div id="preview-canvas-wrapper" class="preview-canvas-wrapper">
+                <div id="preview-canvas" class="preview-canvas"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Floating Font Toolbar -->
+<div id="font-toolbar">
+    <select id="font-family-select">
+        <option>Arial</option><option>Verdana</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option><option>Impact</option>
+    </select>
+    <input type="number" id="font-size-input" min="1" value="16">
+    <input type="color" id="font-color-input" value="#000000">
+</div>
+
+<!-- Custom Template Modal -->
+<div id="template-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Create Custom Template</h2>
+            <button class="close-modal-btn" aria-label="Close modal">×</button>
+        </div>
+        <div class="inspector-group">
+            <label for="template-name-input">Template Name</label>
+            <input type="text" id="template-name-input" placeholder="e.g., My Custom Cover">
+        </div>
+        <div class="inspector-group">
+            <label for="template-type-select">Template Type</label>
+            <select id="template-type-select">
+                <option value="static">Static (with {{placeholders}})</option>
+                <option value="interactive">Interactive (blank canvas)</option>
+            </select>
+        </div>
+        <div class="inspector-group">
+            <label for="template-html-input">HTML</label>
+            <textarea id="template-html-input" rows="8"></textarea>
+        </div>
+        <div class="inspector-group">
+            <label for="template-css-input">CSS</label>
+            <textarea id="template-css-input" rows="8"></textarea>
+        </div>
+        <button id="save-template-btn" class="btn btn-primary">Save Template</button>
     </div>
-    <script src="app.js"></script>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <span id="loading-message">Generating PDF...</span>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toast-container"></div>
+
+<!-- Main Application Script -->
+<script src="app.js" type="module"></script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Catalog Builder</title>
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    
+    <!-- Local Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app-container" class="app-container">
+    <!-- Header Bar -->
+    <header class="header-bar">
+        <div class="logo-title">Catalog Builder</div>
+        <div class="page-tabs-container">
+            <ul id="page-tabs" class="page-tabs"></ul>
+        </div>
+        <button id="add-page-btn" class="add-page-btn" title="Add New Page" aria-label="Add New Page">+</button>
+        <div class="global-actions">
+            <button id="undo-btn" class="btn" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+            <button id="redo-btn" class="btn" title="Redo (Ctrl+Y)" aria-label="Redo">↷</button>
+            <div class="zoom-controls">
+                <button id="zoom-out-btn" class="btn" aria-label="Zoom Out">-</button>
+                <span id="zoom-display" style="margin: 0 10px; font-weight: bold;">100%</span>
+                <button id="zoom-in-btn" class="btn" aria-label="Zoom In">+</button>
+                <button id="zoom-fit-btn" class="btn" style="margin-left: 5px;" title="Fit to screen">Fit</button>
+            </div>
+            <button id="load-project-btn" class="btn">Load</button>
+            <input type="file" id="load-project-input" accept=".json" style="display:none;">
+            <button id="save-project-btn" class="btn" title="Save Project (Ctrl+S)">Save</button>
+            <div class="dropdown">
+                <button class="btn btn-primary">Export</button>
+                <div id="export-dropdown" class="dropdown-content">
+                    <a href="#" id="export-png-btn">Export Current Page (PNG)</a>
+                    <a href="#" id="export-jpeg-btn">Export Current Page (JPEG)</a>
+                    <a href="#" id="export-html-btn">Export Current Page (HTML)</a>
+                    <a href="#" id="export-pdf-btn">Export All Pages (PDF)</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Inspector Panel (Left) -->
+        <aside id="inspector-panel" class="inspector-panel"></aside>
+
+        <!-- Preview Panel (Right) -->
+        <section class="preview-panel" id="preview-panel">
+            <div id="preview-canvas-wrapper" class="preview-canvas-wrapper">
+                <div id="preview-canvas" class="preview-canvas"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Floating Font Toolbar -->
+<div id="font-toolbar">
+    <select id="font-family-select">
+        <option>Arial</option><option>Verdana</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option><option>Impact</option>
+    </select>
+    <input type="number" id="font-size-input" min="1" value="16">
+    <input type="color" id="font-color-input" value="#000000">
+</div>
+
+<!-- Custom Template Modal -->
+<div id="template-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Create Custom Template</h2>
+            <button class="close-modal-btn" aria-label="Close modal">×</button>
+        </div>
+        <div class="inspector-group">
+            <label for="template-name-input">Template Name</label>
+            <input type="text" id="template-name-input" placeholder="e.g., My Custom Cover">
+        </div>
+        <div class="inspector-group">
+            <label for="template-type-select">Template Type</label>
+            <select id="template-type-select">
+                <option value="static">Static (with {{placeholders}})</option>
+                <option value="interactive">Interactive (blank canvas)</option>
+            </select>
+        </div>
+        <div class="inspector-group">
+            <label for="template-html-input">HTML</label>
+            <textarea id="template-html-input" rows="8"></textarea>
+        </div>
+        <div class="inspector-group">
+            <label for="template-css-input">CSS</label>
+            <textarea id="template-css-input" rows="8"></textarea>
+        </div>
+        <button id="save-template-btn" class="btn btn-primary">Save Template</button>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <span id="loading-message">Generating PDF...</span>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toast-container"></div>
+
+<!-- Main Application Script -->
+<script src="app.js" type="module"></script>
+
 </body>
 </html>
