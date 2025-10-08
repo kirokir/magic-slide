@@ -3,29 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catalog Builder</title>
+    <title>Magic Slide Catalog Builder</title>
     <link rel="stylesheet" href="style.css">
-    <!-- jsPDF CDN for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- html2canvas for image exports -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Color picker lib (lightweight CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </head>
-<body>
+<body class="light-theme">
     <div id="app">
-        <header class="toolbar">
-            <button id="zoom-in">+</button>
-            <button id="undo">↶</button>
-            <button id="redo">↷</button>
-            <button id="zoom-out">-</button>
-            <span id="zoom-level">100%</span>
-            <button id="zoom-fit">Fit</button>
-            <button id="load">Load</button>
-            <button id="save">Save</button>
-            <div class="export-group">
-                <button id="export-png">Export PNG</button>
-                <button id="export-jpg">Export JPEG</button>
-                <button id="export-html">Export HTML</button>
-                <button id="export-pdf">Export PDF</button>
+        <!-- Enhanced Toolbar -->
+        <header class="toolbar neumorphic">
+            <div class="toolbar-group">
+                <button id="templates-btn">Templates</button>
+                <select id="template-list">
+                    <option value="">Load Preloaded Template</option>
+                </select>
+            </div>
+            <div class="toolbar-group wysiwyg-tools">
+                <button id="bold" title="Bold">B</button>
+                <button id="italic" title="Italic">I</button>
+                <button id="underline" title="Underline">U</button>
+                <button id="ul-list" title="Bullet List">•</button>
+                <button id="ol-list" title="Numbered List">1.</button>
+                <button id="align-left" title="Left Align">◀</button>
+                <button id="align-center" title="Center">■</button>
+                <button id="align-right" title="Right Align">▶</button>
+                <input type="color" id="text-color" title="Text Color" value="#000000">
+                <input type="color" id="accent-color" title="Accent Color" value="#007bff">
+            </div>
+            <div class="toolbar-group">
+                <button id="zoom-in">+</button>
+                <button id="undo">↶</button>
+                <button id="redo">↷</button>
+                <button id="zoom-out">-</button>
+                <span id="zoom-level">100%</span>
+                <button id="zoom-fit">Fit</button>
+                <button id="theme-toggle">🌙</button>
+                <button id="font-editor">Font Editor</button>
+            </div>
+            <div class="toolbar-group">
+                <button id="load">Load</button>
+                <button id="save">Save</button>
+                <button id="image-upload">📷 Upload Image</button>
+            </div>
+            <div class="toolbar-group export-group">
+                <button id="export-png">PNG</button>
+                <button id="export-jpg">JPEG</button>
+                <button id="export-html">HTML</button>
+                <button id="export-pdf">PDF</button>
             </div>
             <select id="font-selector">
                 <option value="Arial">Arial</option>
@@ -35,12 +61,21 @@
                 <option value="Courier New">Courier New</option>
                 <option value="Impact">Impact</option>
             </select>
-            <button id="create-template">Create Custom Template</button>
+            <button id="create-template">Create Template</button>
         </header>
 
+        <!-- Sidebar for Layers/Elements -->
+        <aside id="sidebar" class="neumorphic">
+            <h3>Layers</h3>
+            <ul id="layer-list"></ul>
+            <button id="add-text">+ Text</button>
+            <button id="add-image">+ Image</button>
+            <button id="add-shape">+ Shape</button>
+        </aside>
+
+        <!-- Main Editor -->
         <main class="editor-container">
-            <div id="editor" class="catalog-editor" contenteditable="true">
-                <!-- Default blank page -->
+            <div id="editor" class="catalog-editor neumorphic" contenteditable="true" ondrop="dropHandler(event)" ondragover="allowDrop(event)">
                 <h1>{{title}}</h1>
                 <p>{{description}}</p>
             </div>
@@ -49,12 +84,16 @@
                 <span id="page-count">Page 1/1</span>
                 <button id="prev-page">&lt;</button>
                 <button id="next-page">&gt;</button>
+                <div class="preview-toggle">
+                    <button id="preview-mobile">📱</button>
+                    <button id="preview-desktop">🖥️</button>
+                </div>
             </div>
         </main>
 
-        <!-- Template Modal -->
-        <div id="template-modal" class="modal">
-            <div class="modal-content">
+        <!-- Template Modal (Unchanged but integrated) -->
+        <div id="template-modal" class="modal neumorphic">
+            <div class="modal-content neumorphic">
                 <span class="close">&times;</span>
                 <h2>Create Custom Template</h2>
                 <label>Template Name: <input type="text" id="template-name"></label>
@@ -70,10 +109,20 @@
             </div>
         </div>
 
-        <!-- Status Messages -->
-        <div id="status" class="status"></div>
-    </div>
+        <!-- Font Editor Modal -->
+        <div id="font-editor-modal" class="modal neumorphic">
+            <div class="modal-content neumorphic">
+                <span class="close">&times;</span>
+                <h2>Font Editor</h2>
+                <input type="file" id="font-upload" accept=".woff,.ttf">
+                <div id="font-preview" class="preview-box">Preview Text: The quick brown fox...</div>
+                <button id="apply-custom-font">Apply Font</button>
+            </div>
+        </div>
 
+        <!-- Status -->
+        <div id="status" class="status neumorphic"></div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>

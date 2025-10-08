@@ -1,24 +1,99 @@
-/* Global Styles */
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-#app { max-width: 1200px; margin: 0 auto; }
-.toolbar { background: #333; color: white; padding: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.toolbar button { background: #555; color: white; border: none; padding: 5px 10px; cursor: pointer; }
-.toolbar button:hover { background: #666; }
-.export-group { display: flex; gap: 5px; }
-#font-selector { padding: 5px; }
-.editor-container { display: flex; flex-direction: column; height: 80vh; }
+:root {
+    --accent-color: #007bff;
+    --bg-color: #f0f0f0;
+    --text-color: #333;
+    --shadow-light: rgba(255,255,255,0.7);
+    --shadow-dark: rgba(0,0,0,0.1);
+}
+
+.dark-theme {
+    --bg-color: #2a2a2a;
+    --text-color: #eee;
+    --shadow-light: rgba(0,0,0,0.3);
+    --shadow-dark: rgba(255,255,255,0.1);
+}
+
+body { 
+    font-family: Arial, sans-serif; 
+    margin: 0; 
+    padding: 0; 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+    transition: all 0.3s ease;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Neumorphic Base */
+.neumorphic {
+    background: var(--bg-color);
+    border-radius: 12px;
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+    border: none;
+}
+
+/* Toolbar */
+.toolbar { 
+    background: var(--bg-color); 
+    padding: 15px; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    flex-wrap: wrap; 
+    box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+    position: sticky; top: 0; z-index: 10;
+}
+.toolbar button { 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+    border: none; 
+    padding: 8px 12px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    transition: all 0.2s;
+}
+.toolbar button:hover, .toolbar button.active { 
+    box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+    transform: translateY(1px);
+}
+.toolbar input[type="color"] { border-radius: 4px; width: 30px; height: 30px; }
+
+/* Sidebar */
+#sidebar { 
+    width: 200px; 
+    padding: 15px; 
+    overflow-y: auto; 
+    border-right: 1px solid var(--accent-color); 
+}
+#layer-list { list-style: none; padding: 0; }
+#layer-list li { padding: 5px; margin: 5px 0; background: var(--bg-color); border-radius: 4px; cursor: move; }
+
+/* Editor */
+.editor-container { display: flex; flex: 1; overflow: hidden; }
 .catalog-editor { 
     flex: 1; 
-    border: 1px solid #ccc; 
     padding: 20px; 
     overflow: auto; 
-    background: white; 
-    font-size: 16px; 
-    transform-origin: top left;
-    transform: scale(1); /* Default zoom */
     min-height: 100%; 
+    transform-origin: top left;
+    transform: scale(1);
+    outline: none;
+    line-height: 1.6;
 }
-#page-nav { padding: 10px; background: #eee; display: flex; justify-content: center; gap: 10px; align-items: center; }
+.catalog-editor img { max-width: 100%; height: auto; }
+#page-nav { 
+    padding: 10px; 
+    background: var(--bg-color); 
+    display: flex; 
+    justify-content: center; 
+    gap: 10px; 
+    align-items: center; 
+    border-top: 1px solid var(--accent-color);
+}
+.preview-toggle button { padding: 5px; }
+
+/* Modals */
 .modal { 
     display: none; 
     position: fixed; 
@@ -27,25 +102,38 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f
     width: 100%; 
     height: 100%; 
     background: rgba(0,0,0,0.5); 
+    backdrop-filter: blur(5px);
 }
 .modal-content { 
-    background: white; 
-    margin: 15% auto; 
+    margin: 10% auto; 
     padding: 20px; 
-    border: none; 
     width: 80%; 
     max-width: 600px; 
 }
-.close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-.close:hover { color: black; }
+.close { float: right; cursor: pointer; font-size: 24px; }
 label { display: block; margin: 10px 0; }
-textarea { width: 100%; }
-.status { position: fixed; bottom: 10px; right: 10px; background: #007bff; color: white; padding: 10px; border-radius: 5px; display: none; }
+textarea, input { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--accent-color); }
 
-/* Font-specific styles (applied dynamically) */
-.font-arial { font-family: Arial, sans-serif; }
-.font-verdana { font-family: Verdana, sans-serif; }
-.font-georgia { font-family: Georgia, serif; }
-.font-times { font-family: 'Times New Roman', serif; }
-.font-courier { font-family: 'Courier New', monospace; }
-.font-impact { font-family: Impact, sans-serif; }
+/* Status */
+.status { 
+    position: fixed; 
+    bottom: 20px; 
+    right: 20px; 
+    padding: 12px; 
+    border-radius: 8px; 
+    display: none; 
+    z-index: 1001;
+}
+
+/* Previews */
+#editor.preview-mobile { max-width: 375px; margin: 0 auto; border: 1px solid var(--accent-color); }
+#editor.preview-desktop { max-width: none; }
+
+/* Font Preview */
+.preview-box { 
+    padding: 20px; 
+    border: 1px dashed var(--accent-color); 
+    margin: 10px 0; 
+    font-size: 18px; 
+    text-align: center;
+}
