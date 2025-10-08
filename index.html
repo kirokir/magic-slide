@@ -3,125 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Slide Catalog Builder</title>
+    <title>Catalog Builder</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Color picker lib (lightweight CDN) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </head>
-<body class="light-theme">
+<body>
     <div id="app">
-        <!-- Enhanced Toolbar -->
-        <header class="toolbar neumorphic">
-            <div class="toolbar-group">
-                <button id="templates-btn">Templates</button>
-                <select id="template-list">
-                    <option value="">Load Preloaded Template</option>
-                </select>
-            </div>
-            <div class="toolbar-group wysiwyg-tools">
-                <button id="bold" title="Bold">B</button>
-                <button id="italic" title="Italic">I</button>
-                <button id="underline" title="Underline">U</button>
-                <button id="ul-list" title="Bullet List">•</button>
-                <button id="ol-list" title="Numbered List">1.</button>
-                <button id="align-left" title="Left Align">◀</button>
-                <button id="align-center" title="Center">■</button>
-                <button id="align-right" title="Right Align">▶</button>
-                <input type="color" id="text-color" title="Text Color" value="#000000">
-                <input type="color" id="accent-color" title="Accent Color" value="#007bff">
-            </div>
-            <div class="toolbar-group">
-                <button id="zoom-in">+</button>
-                <button id="undo">↶</button>
-                <button id="redo">↷</button>
+        <header class="toolbar">
+            <span>Catalog Builder</span>
+            <span id="page-info">Page 1 of 1</span>
+            <div class="toolbar-actions">
                 <button id="zoom-out">-</button>
+                <button id="zoom-in">+</button>
                 <span id="zoom-level">100%</span>
                 <button id="zoom-fit">Fit</button>
-                <button id="theme-toggle">🌙</button>
-                <button id="font-editor">Font Editor</button>
-            </div>
-            <div class="toolbar-group">
                 <button id="load">Load</button>
                 <button id="save">Save</button>
-                <button id="image-upload">📷 Upload Image</button>
+                <button id="export">Export</button>
             </div>
-            <div class="toolbar-group export-group">
-                <button id="export-png">PNG</button>
-                <button id="export-jpg">JPEG</button>
-                <button id="export-html">HTML</button>
-                <button id="export-pdf">PDF</button>
-            </div>
-            <select id="font-selector">
-                <option value="Arial">Arial</option>
-                <option value="Verdana">Verdana</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Impact">Impact</option>
-            </select>
-            <button id="create-template">Create Template</button>
         </header>
 
-        <!-- Sidebar for Layers/Elements -->
-        <aside id="sidebar" class="neumorphic">
-            <h3>Layers</h3>
-            <ul id="layer-list"></ul>
-            <button id="add-text">+ Text</button>
-            <button id="add-image">+ Image</button>
-            <button id="add-shape">+ Shape</button>
-        </aside>
+        <div class="main-container">
+            <aside class="sidebar">
+                <h3>Page Properties</h3>
+                <label>Page Name: <input type="text" id="page-name" value="Page 1"></label>
+                <label>Template:
+                    <select id="template-select">
+                        <option value="cover">Cover</option>
+                        <option value="content">Content</option>
+                    </select>
+                </label>
+                <label>Classic Content: <input type="text" id="classic-content" value="Product Details"></label>
+                <label>Image: <input type="file" id="image-upload" accept="image/*"></label>
+                <label>Overlay Color: <input type="color" id="overlay-color" value="#00000080"></label>
+                <label>Header Text: <input type="text" id="header-text" value="Welcome"></label>
+                <label>Main Title: <input type="text" id="main-title" value="Catalog 2025"></label>
+                <label>Footer Text: <input type="text" id="footer-text" value="© 2025 Company"></label>
+                <button id="create-template">Create Custom Template</button>
+            </aside>
 
-        <!-- Main Editor -->
-        <main class="editor-container">
-            <div id="editor" class="catalog-editor neumorphic" contenteditable="true" ondrop="dropHandler(event)" ondragover="allowDrop(event)">
-                <h1>{{title}}</h1>
-                <p>{{description}}</p>
-            </div>
-            <div id="page-nav">
-                <button id="add-page">+</button>
-                <span id="page-count">Page 1/1</span>
-                <button id="prev-page">&lt;</button>
-                <button id="next-page">&gt;</button>
-                <div class="preview-toggle">
-                    <button id="preview-mobile">📱</button>
-                    <button id="preview-desktop">🖥️</button>
+            <main class="editor-container">
+                <div id="editor" class="catalog-editor" contenteditable="true">
+                    <div class="template-content">
+                        <h1>Catalog 2025</h1>
+                        <p>© 2025 Company</p>
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
 
-        <!-- Template Modal (Unchanged but integrated) -->
-        <div id="template-modal" class="modal neumorphic">
-            <div class="modal-content neumorphic">
+        <!-- Template Modal -->
+        <div id="template-modal" class="modal">
+            <div class="modal-content">
                 <span class="close">&times;</span>
                 <h2>Create Custom Template</h2>
                 <label>Template Name: <input type="text" id="template-name"></label>
-                <label>Template Type:
-                    <select id="template-type">
-                        <option value="static">Static (with {{placeholders}})</option>
-                        <option value="interactive">Interactive (blank canvas)</option>
-                    </select>
-                </label>
-                <label>HTML: <textarea id="template-html" rows="10" cols="50">{{title}} - {{description}}</textarea></label>
-                <label>CSS: <textarea id="template-css" rows="5" cols="50">h1 { font-size: 24px; }</textarea></label>
+                <label>HTML: <textarea id="template-html" rows="5">{{title}} - {{content}}</textarea></label>
+                <label>CSS: <textarea id="template-css" rows="3">h1 { font-size: 24px; }</textarea></label>
                 <button id="save-template">Save Template</button>
             </div>
         </div>
 
-        <!-- Font Editor Modal -->
-        <div id="font-editor-modal" class="modal neumorphic">
-            <div class="modal-content neumorphic">
-                <span class="close">&times;</span>
-                <h2>Font Editor</h2>
-                <input type="file" id="font-upload" accept=".woff,.ttf">
-                <div id="font-preview" class="preview-box">Preview Text: The quick brown fox...</div>
-                <button id="apply-custom-font">Apply Font</button>
-            </div>
-        </div>
-
-        <!-- Status -->
-        <div id="status" class="status neumorphic"></div>
+        <div id="status" class="status"></div>
     </div>
     <script src="app.js"></script>
 </body>
