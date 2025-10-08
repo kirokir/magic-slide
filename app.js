@@ -13,8 +13,6 @@ import {
 
 import {
     render,
-    updateZoomDisplay,
-    updateFontToolbar,
     showToast
 } from './ui.js';
 
@@ -157,15 +155,16 @@ export function selectElement(id) {
 export function updateZoom(newZoomLevel) {
     appState.zoomLevel = Math.max(0.1, Math.min(3, newZoomLevel));
     getEl('preview-canvas-wrapper').style.transform = `scale(${appState.zoomLevel})`;
-    updateZoomDisplay();
+    getEl('zoom-display').textContent = `${Math.round(appState.zoomLevel * 100)}%`;
 }
 
 // --- PROJECT SAVE/LOAD/EXPORT ---
-const commitPendingChanges = () => document.activeElement ?.blur();
+const commitPendingChanges = () => document.activeElement?.blur();
 
 function saveProject() {
     commitPendingChanges();
-    const data = JSON.stringify({ ...appState, templates: {} }, null, 2); // Don't save default templates
+    const dataToSave = { ...appState, templates: {} }; // Don't save default templates
+    const data = JSON.stringify(dataToSave, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -180,7 +179,7 @@ function loadProject(file) {
     reader.onload = (event) => {
         try {
             const loadedState = JSON.parse(event.target.result);
-            if (loadedState ?.pages && Array.isArray(loadedState.pages)) {
+            if (loadedState?.pages && Array.isArray(loadedState.pages)) {
                 // Restore non-serialized state properties
                 loadedState.templates = appState.templates;
                 
@@ -206,8 +205,8 @@ function loadProject(file) {
 async function exportImage(format = 'png') {
     commitPendingChanges();
     deselectAll();
-    render(); // Ensure no selection borders are exported
-    await new Promise(r => setTimeout(r, 100)); // Wait for DOM to update
+    render();
+    await new Promise(r => setTimeout(r, 100));
 
     const canvas = await html2canvas(getEl('preview-canvas'));
     const a = document.createElement('a');
@@ -284,8 +283,8 @@ function saveCustomTemplate() {
 
 // --- EVENT LISTENERS ---
 function addEventListeners() {
+    // --- Desktop Listeners ---
     getEl('add-page-btn').addEventListener('click', addNewPage);
-
     getEl('page-tabs').addEventListener('click', (e) => {
         const tab = e.target.closest('.page-tab');
         if (!tab) return;
@@ -296,7 +295,6 @@ function addEventListeners() {
             switchPage(index);
         }
     });
-
     getEl('page-tabs').addEventListener('dblclick', (e) => {
         const nameSpan = e.target.closest('.tab-name');
         if (nameSpan) {
@@ -306,7 +304,6 @@ function addEventListeners() {
             if (newName) renamePage(index, newName);
         }
     });
-
     getEl('undo-btn').addEventListener('click', undo);
     getEl('redo-btn').addEventListener('click', redo);
     getEl('save-project-btn').addEventListener('click', saveProject);
@@ -316,7 +313,6 @@ function addEventListeners() {
         if (e.target.files?.[0]) loadProject(e.target.files[0]);
         e.target.value = null;
     });
-
     getEl('export-dropdown').addEventListener('click', (e) => {
         e.preventDefault();
         const id = e.target.id;
@@ -325,7 +321,6 @@ function addEventListeners() {
         if (id === 'export-pdf-btn') exportPDF();
         e.target.closest('.dropdown').blur();
     });
-
     getEl('zoom-in-btn').addEventListener('click', () => updateZoom(appState.zoomLevel + 0.1));
     getEl('zoom-out-btn').addEventListener('click', () => updateZoom(appState.zoomLevel - 0.1));
     getEl('zoom-fit-btn').addEventListener('click', () => {
@@ -333,6 +328,26 @@ function addEventListeners() {
         updateZoom((previewPanel.clientWidth - 60) / appState.pageDimensions.width);
     });
 
+    // --- Mobile Listeners ---
+    const inspectorPanel = getEl('inspector-panel');
+    getEl('mobile-toggle-inspector').addEventListener('click', () => {
+        inspectorPanel.classList.toggle('is-open');
+    });
+    getEl('mobile-close-inspector').addEventListener('click', () => {
+        inspectorPanel.classList.remove('is-open');
+    });
+    getEl('mobile-page-switcher').addEventListener('change', (e) => {
+        switchPage(parseInt(e.target.value, 10));
+    });
+    getEl('mobile-add-page-btn').addEventListener('click', (e) => { e.preventDefault(); addNewPage(); });
+    getEl('mobile-undo-btn').addEventListener('click', (e) => { e.preventDefault(); undo(); });
+    getEl('mobile-redo-btn').addEventListener('click', (e) => { e.preventDefault(); redo(); });
+    getEl('mobile-save-btn').addEventListener('click', (e) => { e.preventDefault(); saveProject(); });
+    getEl('mobile-load-btn').addEventListener('click', (e) => { e.preventDefault(); getEl('load-project-input').click(); });
+    getEl('mobile-export-pdf-btn').addEventListener('click', (e) => { e.preventDefault(); exportPDF(); });
+
+
+    // --- Global Listeners ---
     getEl('preview-canvas').addEventListener('click', (e) => {
         const interactiveEl = e.target.closest('.interactive-element');
         const productCard = e.target.closest('.product-card');
@@ -348,7 +363,6 @@ function addEventListeners() {
             render();
         }
     });
-
     getEl('preview-canvas').addEventListener('dblclick', (e) => {
         const elDiv = e.target.closest('.interactive-element');
         if (!elDiv) return;
@@ -361,32 +375,23 @@ function addEventListeners() {
             }
         }
     });
-
     getEl('preview-panel').addEventListener('scroll', () => {
         if (getEl('font-toolbar').style.display === 'flex') {
-            updateFontToolbar();
+            import('./ui.js').then(ui => ui.updateFontToolbar());
         }
     });
-
     getEl('font-toolbar').addEventListener('change', (e) => {
         const el = getSelectedElement();
         if (!el || el.type !== 'text') return;
-        const propMap = {
-            'font-family-select': 'fontFamily',
-            'font-size-input': 'fontSize',
-            'font-color-input': 'color'
-        };
+        const propMap = { 'font-family-select': 'fontFamily', 'font-size-input': 'fontSize', 'font-color-input': 'color' };
         const prop = propMap[e.target.id];
         const value = e.target.id === 'font-size-input' ? `${e.target.value}px` : e.target.value;
         updateElementStyleProperty(prop, value);
     });
-    
     const templateModal = getEl('template-modal');
     templateModal.querySelector('.close-modal-btn').addEventListener('click', () => templateModal.style.display = 'none');
     getEl('save-template-btn').addEventListener('click', saveCustomTemplate);
-
     document.addEventListener('keydown', handleKeyboardShortcuts);
-    
     new Sortable(getEl('page-tabs'), {
         animation: 150,
         onEnd: (evt) => {

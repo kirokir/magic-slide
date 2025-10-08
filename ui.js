@@ -4,7 +4,8 @@ import {
     getSelectedElement,
     getEl,
     deselectAll,
-    recordState
+    recordState,
+    debounce
 } from './state.js';
 
 import {
@@ -14,8 +15,7 @@ import {
     updateElementStyleProperty,
     addElement,
     deleteElement,
-    selectElement,
-    updateZoom
+    selectElement
 } from './app.js';
 
 // --- MAIN RENDER FUNCTION ---
@@ -44,6 +44,9 @@ export function render() {
 // --- RENDERING SUB-ROUTINES ---
 function renderTabs() {
     const pageTabs = getEl('page-tabs');
+    const mobileSwitcher = getEl('mobile-page-switcher');
+
+    // --- Desktop Tabs Rendering (existing code) ---
     pageTabs.innerHTML = '';
     const fragment = document.createDocumentFragment();
     appState.pages.forEach((page, index) => {
@@ -66,6 +69,18 @@ function renderTabs() {
         fragment.appendChild(li);
     });
     pageTabs.appendChild(fragment);
+
+    // --- NEW: Mobile Page Switcher Population ---
+    mobileSwitcher.innerHTML = '';
+    appState.pages.forEach((page, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = page.name;
+        if (index === appState.currentPageIndex) {
+            option.selected = true;
+        }
+        mobileSwitcher.appendChild(option);
+    });
 }
 
 function renderPreview() {
@@ -210,7 +225,12 @@ function renderInspector() {
     const selectedProduct = (page?.template === 'product-list' && appState.selectedProductIndex > -1) ? page.products[appState.selectedProductIndex] : null;
 
     const inspectorPanel = getEl('inspector-panel');
+    const mobileCloseButton = inspectorPanel.querySelector('#mobile-close-inspector');
     inspectorPanel.innerHTML = '';
+    if (mobileCloseButton) {
+        inspectorPanel.prepend(mobileCloseButton);
+    }
+
 
     if (selectedElement) renderElementInspector(selectedElement);
     else if (selectedProduct) renderProductInspector(selectedProduct);
@@ -219,27 +239,35 @@ function renderInspector() {
 
 function renderPageInspector(page) {
     const inspectorPanel = getEl('inspector-panel');
-    inspectorPanel.innerHTML = `<h2>Page Properties</h2>`;
-    inspectorPanel.append(
-        createInputGroup('Page Name', 'page-name-input', page.name, 'text', (val) => updatePageProperty('name', val)),
-        createSelectGroup('Template', 'page-template-select', page.template, Object.keys(appState.templates).map(k => ({ value: k, text: appState.templates[k].name })), (val) => updatePageProperty('template', val))
-    );
+    const container = document.createDocumentFragment();
+    
+    const h2 = document.createElement('h2');
+    h2.textContent = "Page Properties";
+    container.appendChild(h2);
+
+    container.appendChild(createInputGroup('Page Name', 'page-name-input', page.name, 'text', (val) => updatePageProperty('name', val)));
+    container.appendChild(createSelectGroup('Template', 'page-template-select', page.template, Object.keys(appState.templates).map(k => ({ value: k, text: appState.templates[k].name })), (val) => updatePageProperty('template', val)));
 
     const template = appState.templates[page.template];
     if (template.type === 'static') {
-        inspectorPanel.append(document.createElement('hr'), ...createStaticContentInputs(page, template));
+        container.appendChild(document.createElement('hr'));
+        createStaticContentInputs(page, template).forEach(el => container.appendChild(el));
     } else if (template.type === 'interactive') {
-        inspectorPanel.append(document.createElement('hr'), ...createInteractiveControls(page));
+        container.appendChild(document.createElement('hr'));
+        createInteractiveControls(page).forEach(el => container.appendChild(el));
     } else if (template.type === 'product') {
-        inspectorPanel.append(document.createElement('hr'), ...createProductControls());
+        container.appendChild(document.createElement('hr'));
+        createProductControls().forEach(el => container.appendChild(el));
     }
     
-    inspectorPanel.append(document.createElement('hr'));
+    container.appendChild(document.createElement('hr'));
     const customTplBtn = document.createElement('button');
     customTplBtn.className = 'btn';
     customTplBtn.textContent = 'Create Custom Template';
     customTplBtn.onclick = () => getEl('template-modal').style.display = 'flex';
-    inspectorPanel.append(customTplBtn);
+    container.appendChild(customTplBtn);
+    
+    inspectorPanel.appendChild(container);
 }
 
 function createStaticContentInputs(page, template) {
@@ -293,14 +321,11 @@ function createInteractiveControls(page) {
     addImageLabel.htmlFor = 'add-image-input'; addImageLabel.className = 'btn'; addImageLabel.textContent = 'Add Image';
     
     const controlsContainer = document.createElement('div');
-    controlsContainer.style.display = 'flex';
-    controlsContainer.style.gap = '10px';
-    controlsContainer.style.flexWrap = 'wrap';
+    controlsContainer.className = 'inspector-group-actions';
     controlsContainer.append(addTextBtn, addShapeBtn, addImageLabel, addImageInput);
 
     const layersTitle = document.createElement('h3');
     layersTitle.textContent = "Layers";
-    layersTitle.style.marginTop = "20px";
 
     const layerList = document.createElement('ul');
     layerList.id = "layer-list";
@@ -370,6 +395,7 @@ function createProductControls() {
 
 function renderProductInspector(product) {
     const inspectorPanel = getEl('inspector-panel');
+    const container = document.createDocumentFragment();
     const page = getCurrentPage();
     const updateProductProp = (prop, value, shouldRecord) => {
         if (product[prop] !== value) {
@@ -401,26 +427,27 @@ function renderProductInspector(product) {
         }
     };
     
-    inspectorPanel.append(
-        header,
-        createInputGroup('Name', 'prod-name', product.name, 'text', (val) => updateProductProp('name', val, false), true),
-        createInputGroup('Code', 'prod-code', product.code, 'text', (val) => updateProductProp('code', val, false), true),
-        createTextAreaGroup('Description', 'prod-desc', product.description, (val) => updateProductProp('description', val, false), true),
-        createTextAreaGroup('Features (one per line)', 'prod-feat', product.features, (val) => updateProductProp('features', val, false), true),
-        createInputGroup('Image', 'prod-img', '', 'file', (val) => {
-            if (val[0]) {
-                const reader = new FileReader();
-                reader.onload = (re) => updateProductProp('image', re.target.result, true);
-                reader.readAsDataURL(val[0]);
-            }
-        }),
-        document.createElement('hr'),
-        deleteBtn
-    );
+    container.appendChild(header);
+    container.appendChild(createInputGroup('Name', 'prod-name', product.name, 'text', (val) => updateProductProp('name', val, false), true));
+    container.appendChild(createInputGroup('Code', 'prod-code', product.code, 'text', (val) => updateProductProp('code', val, false), true));
+    container.appendChild(createTextAreaGroup('Description', 'prod-desc', product.description, (val) => updateProductProp('description', val, false), true));
+    container.appendChild(createTextAreaGroup('Features (one per line)', 'prod-feat', product.features, (val) => updateProductProp('features', val, false), true));
+    container.appendChild(createInputGroup('Image', 'prod-img', '', 'file', (val) => {
+        if (val[0]) {
+            const reader = new FileReader();
+            reader.onload = (re) => updateProductProp('image', re.target.result, true);
+            reader.readAsDataURL(val[0]);
+        }
+    }));
+    container.appendChild(document.createElement('hr'));
+    container.appendChild(deleteBtn);
+    inspectorPanel.appendChild(container);
 }
 
 function renderElementInspector(el) {
     const inspectorPanel = getEl('inspector-panel');
+    const container = document.createDocumentFragment();
+
     const header = document.createElement('h2');
     header.textContent = `Element: ${el.type}`;
 
@@ -429,17 +456,16 @@ function renderElementInspector(el) {
     deleteBtn.style.cssText = 'background-color: var(--danger-color); color: white;';
     deleteBtn.textContent = "Delete Element";
     deleteBtn.onclick = () => deleteElement(el.id);
-
-    inspectorPanel.append(
-        header,
-        createInputGroup('X', 'el-x', Math.round(el.x), 'number', (val) => updateElementProperty('x', parseFloat(val), true)),
-        createInputGroup('Y', 'el-y', Math.round(el.y), 'number', (val) => updateElementProperty('y', parseFloat(val), true)),
-        createInputGroup('Width', 'el-width', Math.round(el.width), 'number', (val) => updateElementProperty('width', parseFloat(val), true)),
-        createInputGroup('Height', 'el-height', Math.round(el.height), 'number', (val) => updateElementProperty('height', parseFloat(val), true)),
-        createInputGroup('Z-Index', 'el-z', el.zIndex, 'number', (val) => updateElementProperty('zIndex', parseInt(val), false)),
-        document.createElement('hr'),
-        deleteBtn
-    );
+    
+    container.appendChild(header);
+    container.appendChild(createInputGroup('X', 'el-x', Math.round(el.x), 'number', (val) => updateElementProperty('x', parseFloat(val), true)));
+    container.appendChild(createInputGroup('Y', 'el-y', Math.round(el.y), 'number', (val) => updateElementProperty('y', parseFloat(val), true)));
+    container.appendChild(createInputGroup('Width', 'el-width', Math.round(el.width), 'number', (val) => updateElementProperty('width', parseFloat(val), true)));
+    container.appendChild(createInputGroup('Height', 'el-height', Math.round(el.height), 'number', (val) => updateElementProperty('height', parseFloat(val), true)));
+    container.appendChild(createInputGroup('Z-Index', 'el-z', el.zIndex, 'number', (val) => updateElementProperty('zIndex', parseInt(val), false)));
+    container.appendChild(document.createElement('hr'));
+    container.appendChild(deleteBtn);
+    inspectorPanel.appendChild(container);
 }
 
 // --- DOM ELEMENT CREATION HELPERS ---

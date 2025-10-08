@@ -34,19 +34,19 @@ body {
 /* --- MAIN LAYOUT --- */
 .app-container { display: flex; flex-direction: column; height: 100vh; }
 .header-bar { display: flex; align-items: center; padding: 0 20px; height: 60px; background-color: var(--bg-panel); box-shadow: var(--main-shadow); z-index: 100; flex-shrink: 0; }
-.logo-title { font-size: 1.5rem; font-weight: 600; color: var(--accent-color); }
+.logo-title { font-size: 1.5rem; font-weight: 600; color: var(--accent-color); margin-right: auto; } /* Pushes other items to the right */
 .page-tabs-container { flex-grow: 1; margin-left: 20px; overflow-x: auto; height: 100%; }
 .page-tabs { display: flex; list-style: none; height: 100%; align-items: flex-end; }
 .page-tab { padding: 10px 15px; cursor: grab; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 2px; border: 1px solid transparent; border-bottom: none; background-color: #d1d9e6; box-shadow: 3px 3px 6px #a3b1c6, -3px -3px 6px #ffffff; display: flex; align-items: center; gap: 8px; }
 .page-tab.active-tab { background-color: var(--bg-color); box-shadow: none; position: relative; top: 1px; }
 .tab-name { white-space: nowrap; }
 .close-tab-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); line-height: 1; }
-.add-page-btn { font-size: 1.8rem; cursor: pointer; margin: 0 10px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: var(--main-shadow); }
+.add-page-btn { font-size: 1.8rem; cursor: pointer; margin: 0 10px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: var(--main-shadow); flex-shrink: 0; }
 .add-page-btn:active { box-shadow: var(--inset-shadow); }
 .global-actions { display: flex; align-items: center; gap: 10px; }
 
-.main-content { display: flex; flex-grow: 1; overflow: hidden; }
-.inspector-panel { width: 380px; flex-shrink: 0; background-color: var(--bg-panel); padding: 25px; overflow-y: auto; box-shadow: var(--main-shadow); }
+.main-content { position: relative; display: flex; flex-grow: 1; overflow: hidden; }
+.inspector-panel { width: 380px; flex-shrink: 0; background-color: var(--bg-panel); padding: 25px; overflow-y: auto; box-shadow: var(--main-shadow); transition: transform 0.3s ease-in-out; }
 .preview-panel { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 30px; overflow: auto; position: relative; }
 .preview-canvas-wrapper { transform-origin: top center; }
 .preview-canvas { background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
@@ -59,66 +59,25 @@ body {
 .btn-primary:not(:disabled):active { background-color: var(--accent-hover); box-shadow: var(--inset-shadow); }
 
 .dropdown { position: relative; display: inline-block; }
-.dropdown-content { display: none; position: absolute; background-color: var(--bg-panel); min-width: 160px; box-shadow: var(--main-shadow); z-index: 1; border-radius: 8px; right: 0; }
+.dropdown-content { display: none; position: absolute; background-color: var(--bg-panel); min-width: 180px; box-shadow: var(--main-shadow); z-index: 101; border-radius: 8px; right: 0; overflow: hidden; }
 .dropdown-content a { color: var(--text-primary); padding: 12px 16px; text-decoration: none; display: block; }
 .dropdown-content a:hover { background-color: #d1d9e6; }
 .dropdown:hover .dropdown-content { display: block; }
 
-
 /* --- IMPROVED INSPECTOR PANEL STYLES --- */
-#inspector-panel h2, #inspector-panel h3 {
-    margin-bottom: 15px; /* More space below titles */
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-#inspector-panel h2 { 
-    font-size: 1.2rem;
-    margin-top: 10px; /* Space above titles when they follow another element */
-}
-#inspector-panel h3 {
-    font-size: 1rem;
-    margin-top: 25px; /* More space above sub-titles */
-}
+#inspector-panel h2, #inspector-panel h3 { margin-bottom: 15px; color: var(--text-secondary); font-weight: 600; }
+#inspector-panel h2 { font-size: 1.2rem; margin-top: 10px; }
+#inspector-panel h3 { font-size: 1rem; margin-top: 25px; }
 
-.inspector-group { 
-    margin-bottom: 25px; /* Increased space between form groups */
-}
-.inspector-group label { 
-    display: block; 
-    margin-bottom: 10px; /* More space between label and input */
-    font-weight: 500; 
-    color: var(--text-secondary); 
-}
-.inspector-group input, .inspector-group select, .inspector-group textarea { 
-    width: 100%; 
-    padding: 12px; /* Slightly more padding for a better feel */
-    border: none; 
-    border-radius: 8px; 
-    background-color: var(--bg-panel); 
-    box-shadow: var(--inset-shadow); 
-}
+.inspector-group { margin-bottom: 25px; }
+.inspector-group label { display: block; margin-bottom: 10px; font-weight: 500; color: var(--text-secondary); }
+.inspector-group input, .inspector-group select, .inspector-group textarea { width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: var(--bg-panel); box-shadow: var(--inset-shadow); }
 textarea { min-height: 80px; resize: vertical; }
 
-/* NEW: Container for action buttons like "Add Element" */
-.inspector-group-actions {
-    display: flex;
-    gap: 10px; /* Clean spacing between buttons */
-}
-/* NEW: Make inspector buttons slightly smaller to fit better */
-.inspector-panel .btn {
-    padding: 9px 15px;
-    flex-grow: 1; /* Allow buttons to share space equally */
-}
+.inspector-group-actions { display: flex; gap: 10px; }
+.inspector-panel .btn { padding: 9px 15px; flex-grow: 1; }
 
-/* NEW: Styled horizontal rule for better separation */
-#inspector-panel hr {
-    border: none;
-    height: 2px;
-    background-color: transparent;
-    box-shadow: var(--inset-shadow);
-    margin: 35px 0; /* Generous vertical margin */
-}
-
+#inspector-panel hr { border: none; height: 2px; background-color: transparent; box-shadow: var(--inset-shadow); margin: 35px 0; }
 
 /* --- INTERACTIVE CANVAS --- */
 .interactive-element { position: absolute; border: 1px dashed transparent; touch-action: none; }
@@ -138,22 +97,12 @@ textarea { min-height: 80px; resize: vertical; }
 .layer-visibility-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; }
 
 /* --- FLOATING FONT TOOLBAR --- */
-#font-toolbar { 
-    position: absolute; 
-    display: none; /* Correctly hidden by default */
-    background-color: var(--bg-panel); 
-    padding: 8px; 
-    border-radius: 8px; 
-    box-shadow: var(--main-shadow); 
-    z-index: 1001; 
-    gap: 8px; 
-}
+#font-toolbar { position: absolute; display: none; background-color: var(--bg-panel); padding: 8px; border-radius: 8px; box-shadow: var(--main-shadow); z-index: 1001; gap: 8px; }
 #font-toolbar select, #font-toolbar input { padding: 5px; border: none; border-radius: 5px; background-color: var(--bg-panel); box-shadow: var(--inset-shadow); }
 #font-toolbar input[type="number"] { width: 60px; }
-#font-toolbar input[type="color"] { padding: 0; width: 30px; height: 30px; border-radius: 5px; overflow: hidden; } /* Improved color input styling */
-#font-toolbar input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } /* Remove default padding */
-#font-toolbar input[type="color"]::-webkit-color-swatch { border: none; } /* Remove default border */
-
+#font-toolbar input[type="color"] { padding: 0; width: 30px; height: 30px; border-radius: 5px; overflow: hidden; }
+#font-toolbar input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+#font-toolbar input[type="color"]::-webkit-color-swatch { border: none; }
 
 /* --- MODAL DIALOG --- */
 .modal { position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
@@ -170,3 +119,62 @@ textarea { min-height: 80px; resize: vertical; }
 #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 4000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .toast { background-color: rgba(0, 0, 0, 0.75); color: white; padding: 12px 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: toast-fade 3s ease-in-out forwards; font-weight: 500; }
 @keyframes toast-fade { 0%, 100% { opacity: 0; transform: translateY(20px); } 10%, 90% { opacity: 1; transform: translateY(0); } }
+
+/* --- RESPONSIVE VISIBILITY HELPERS --- */
+.mobile-only { display: none; } /* Hidden by default */
+
+/* --- MOBILE-SPECIFIC HEADER ELEMENTS --- */
+.mobile-header-actions { align-items: center; gap: 5px; }
+.mobile-icon-btn { background: none; border: none; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--main-shadow); }
+.mobile-icon-btn:active { box-shadow: var(--inset-shadow); }
+.mobile-icon-btn svg { color: var(--text-secondary); }
+.mobile-page-switcher {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: var(--bg-panel);
+    border: none;
+    box-shadow: var(--inset-shadow);
+    border-radius: 8px;
+    padding: 8px 28px 8px 12px;
+    font-weight: 500;
+    max-width: 150px;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23333' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 1em;
+}
+.close-inspector-btn { position: absolute; top: 15px; right: 15px; z-index: 1; }
+
+/* --- MEDIA QUERY FOR MOBILE / RESPONSIVE LAYOUT --- */
+@media (max-width: 800px) {
+    .desktop-only { display: none; }
+    .mobile-only { display: flex; } /* Use flex for alignment */
+
+    .logo-title { margin-right: auto; font-size: 1.2rem; }
+
+    .main-content {
+        flex-direction: column;
+    }
+
+    .inspector-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        max-width: 380px; /* Limit width on tablets */
+        height: 100%;
+        z-index: 1500;
+        transform: translateX(-100%); /* Hidden off-screen by default */
+    }
+
+    .inspector-panel.is-open {
+        transform: translateX(0); /* Slides into view */
+    }
+
+    .preview-panel {
+        width: 100%;
+        height: 100%;
+        padding: 15px; /* Reduce padding on mobile */
+    }
+}
