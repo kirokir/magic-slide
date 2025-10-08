@@ -91,26 +91,29 @@
     </main>
 </div>
 
-<!-- All modals and popups remain unchanged -->
-<div id="font-toolbar">...</div>
-<div id="template-modal" class="modal">...</div>
-<div id="loading-overlay" class="loading-overlay">...</div>
-<div id="toast-container">...</div>
+<!-- All modals, toolbars, and overlays remain here -->
+<div id="font-toolbar">
+    <select id="font-family-select"><option>Arial</option><option>Verdana</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option><option>Impact</option></select>
+    <input type="number" id="font-size-input" min="1" value="16">
+    <input type="color" id="font-color-input" value="#000000">
+</div>
+<div id="template-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title">Create Custom Template</h2><button class="close-modal-btn" aria-label="Close modal">×</button></div>
+        <div class="inspector-group"><label for="template-name-input">Template Name</label><input type="text" id="template-name-input" placeholder="e.g., My Custom Cover"></div>
+        <div class="inspector-group"><label for="template-type-select">Template Type</label><select id="template-type-select"><option value="static">Static (with {{placeholders}})</option><option value="interactive">Interactive (blank canvas)</option></select></div>
+        <div class="inspector-group"><label for="template-html-input">HTML</label><textarea id="template-html-input" rows="8"></textarea></div>
+        <div class="inspector-group"><label for="template-css-input">CSS</label><textarea id="template-css-input" rows="8"></textarea></div>
+        <button id="save-template-btn" class="btn btn-primary">Save Template</button>
+    </div>
+</div>
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div><span id="loading-message">Generating PDF...</span>
+</div>
+<div id="toast-container"></div>
 
-<!-- Main Application Script -->
+<!-- Main Application Script (the inline script has been removed) -->
 <script src="app.js" type="module"></script>
-<script>
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      });
-    }
-</script>
 
 </body>
 </html>

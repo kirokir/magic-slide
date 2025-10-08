@@ -103,28 +103,102 @@ export function updateZoom(newZoomLevel) {
 
 // --- PROJECT SAVE/LOAD/EXPORT ---
 const commitPendingChanges = () => document.activeElement?.blur();
-function saveProject() { /* ... unchanged ... */ }
-function loadProject(file) { /* ... unchanged ... */ }
-async function exportImage(format = 'png') { /* ... unchanged ... */ }
-async function exportPDF() { /* ... unchanged ... */ }
+function saveProject() {
+    commitPendingChanges();
+    const dataToSave = { ...appState, templates: {} };
+    const data = JSON.stringify(dataToSave, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'catalog-project.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Project Saved!');
+}
+function loadProject(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const loadedState = JSON.parse(event.target.result);
+            if (loadedState?.pages && Array.isArray(loadedState.pages)) {
+                loadedState.templates = appState.templates;
+                loadedState.pages.forEach(p => { if (p.elements) p.elements.forEach(el => { el.isVisible = el.isVisible ?? true; }); });
+                Object.assign(appState, loadedState);
+                recordState();
+                render();
+                showToast('Project Loaded Successfully.');
+            } else { throw new Error('Invalid format'); }
+        } catch (error) { console.error('Error loading project:', error); alert('Failed to load project file.'); }
+    };
+    reader.readAsText(file);
+}
+async function exportImage(format = 'png') {
+    commitPendingChanges();
+    deselectAll();
+    render();
+    await new Promise(r => setTimeout(r, 100));
+    const canvas = await html2canvas(getEl('preview-canvas'));
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL(`image/${format}`);
+    a.download = `${getCurrentPage().name}.${format}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+async function exportPDF() {
+    commitPendingChanges();
+    deselectAll();
+    render();
+    await new Promise(r => setTimeout(r, 100));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [appState.pageDimensions.width, appState.pageDimensions.height] });
+    const loadingOverlay = getEl('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    const originalIndex = appState.currentPageIndex;
+    for (let i = 0; i < appState.pages.length; i++) {
+        getEl('loading-message').textContent = `Processing page ${i + 1} of ${appState.pages.length}...`;
+        switchPage(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const canvas = await html2canvas(getEl('preview-canvas'), { scale: 2 });
+        if (i > 0) pdf.addPage([appState.pageDimensions.width, appState.pageDimensions.height], 'p');
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, appState.pageDimensions.width, appState.pageDimensions.height);
+    }
+    pdf.save('catalog.pdf');
+    loadingOverlay.style.display = 'none';
+    showToast('PDF Exported Successfully!');
+    switchPage(originalIndex);
+}
 
 // --- CUSTOM TEMPLATES ---
-function loadCustomTemplates() { /* ... unchanged ... */ }
-function saveCustomTemplate() { /* ... unchanged ... */ }
+function loadCustomTemplates() {
+    const custom = localStorage.getItem('custom-catalog-templates');
+    if (custom) { try { Object.assign(appState.templates, JSON.parse(custom)); } catch (e) { console.error("Could not load custom templates", e); } }
+}
+function saveCustomTemplate() {
+    const name = getEl('template-name-input').value.trim(), id = name.toLowerCase().replace(/[\s_]+/g, '-'), type = getEl('template-type-select').value, html = getEl('template-html-input').value, css = getEl('template-css-input').value;
+    if (!name || !id) { alert('Template name is required.'); return; }
+    const newTemplate = { name, type, html, css };
+    const custom = JSON.parse(localStorage.getItem('custom-catalog-templates') || '{}');
+    custom[id] = newTemplate;
+    localStorage.setItem('custom-catalog-templates', JSON.stringify(custom));
+    appState.templates[id] = newTemplate;
+    getEl('template-modal').style.display = 'none';
+    render();
+    showToast(`Template "${name}" saved!`);
+}
 
 // --- EVENT LISTENERS ---
 function addEventListeners() {
     // --- Desktop Listeners ---
     getEl('add-page-btn').addEventListener('click', addNewPage);
-    getEl('page-tabs').addEventListener('click', (e) => { /* ... unchanged ... */ });
-    getEl('page-tabs').addEventListener('dblclick', (e) => { /* ... unchanged ... */ });
+    getEl('page-tabs').addEventListener('click', (e) => { const tab = e.target.closest('.page-tab'); if (!tab) return; const index = parseInt(tab.dataset.index); if (e.target.classList.contains('close-tab-btn')) { deletePage(index); } else { switchPage(index); } });
+    getEl('page-tabs').addEventListener('dblclick', (e) => { const nameSpan = e.target.closest('.tab-name'); if (nameSpan) { const index = parseInt(nameSpan.closest('.page-tab').dataset.index); const newName = prompt('Enter new page name:', appState.pages[index].name); if (newName) renamePage(index, newName); } });
     getEl('undo-btn').addEventListener('click', undo);
     getEl('redo-btn').addEventListener('click', redo);
     getEl('save-project-btn').addEventListener('click', saveProject);
     const loadInput = getEl('load-project-input');
     getEl('load-project-btn').addEventListener('click', () => loadInput.click());
     loadInput.addEventListener('change', (e) => { if (e.target.files?.[0]) loadProject(e.target.files[0]); e.target.value = null; });
-    getEl('export-dropdown').addEventListener('click', (e) => { /* ... unchanged ... */ });
+    getEl('export-dropdown').addEventListener('click', (e) => { e.preventDefault(); const id = e.target.id; if (id === 'export-png-btn') exportImage('png'); if (id === 'export-jpeg-btn') exportImage('jpeg'); if (id === 'export-pdf-btn') exportPDF(); e.target.closest('.dropdown').blur(); });
     getEl('zoom-in-btn').addEventListener('click', () => updateZoom(appState.zoomLevel + 0.1));
     getEl('zoom-out-btn').addEventListener('click', () => updateZoom(appState.zoomLevel - 0.1));
     getEl('zoom-fit-btn').addEventListener('click', () => { const panel = getEl('preview-panel'); updateZoom((panel.clientWidth - 60) / appState.pageDimensions.width); });
@@ -134,21 +208,9 @@ function addEventListeners() {
     getEl('mobile-toggle-inspector').addEventListener('click', () => inspectorPanel.classList.toggle('is-open'));
     getEl('mobile-close-inspector').addEventListener('click', () => inspectorPanel.classList.remove('is-open'));
     getEl('mobile-page-switcher').addEventListener('change', (e) => switchPage(parseInt(e.target.value, 10)));
-    
-    // Mobile Dropdown Menu Logic
     const mobileMenuDropdown = getEl('mobile-menu-dropdown');
-    getEl('mobile-more-actions').addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent the global click listener from firing immediately
-        mobileMenuDropdown.classList.toggle('is-active');
-    });
-    
-    // Wire up menu items to close menu on click
-    const mobileMenuLinks = mobileMenuDropdown.querySelectorAll('a');
-    const createMobileAction = (action) => (e) => {
-        e.preventDefault();
-        action();
-        mobileMenuDropdown.classList.remove('is-active');
-    };
+    getEl('mobile-more-actions').addEventListener('click', (e) => { e.stopPropagation(); mobileMenuDropdown.classList.toggle('is-active'); });
+    const createMobileAction = (action) => (e) => { e.preventDefault(); action(); mobileMenuDropdown.classList.remove('is-active'); };
     getEl('mobile-add-page-btn').addEventListener('click', createMobileAction(addNewPage));
     getEl('mobile-undo-btn').addEventListener('click', createMobileAction(undo));
     getEl('mobile-redo-btn').addEventListener('click', createMobileAction(redo));
@@ -157,25 +219,25 @@ function addEventListeners() {
     getEl('mobile-export-pdf-btn').addEventListener('click', createMobileAction(exportPDF));
 
     // --- Global Listeners ---
-    document.addEventListener('click', () => {
-        // Close mobile menu if open
-        if (mobileMenuDropdown.classList.contains('is-active')) {
-            mobileMenuDropdown.classList.remove('is-active');
-        }
-    });
-
-    getEl('preview-canvas').addEventListener('click', (e) => { /* ... unchanged ... */ });
-    getEl('preview-canvas').addEventListener('dblclick', (e) => { /* ... unchanged ... */ });
+    document.addEventListener('click', () => { if (mobileMenuDropdown.classList.contains('is-active')) { mobileMenuDropdown.classList.remove('is-active'); } });
+    getEl('preview-canvas').addEventListener('click', (e) => { const iEl = e.target.closest('.interactive-element'), pCard = e.target.closest('.product-card'); if (iEl) { selectElement(iEl.dataset.id); } else if (pCard) { deselectAll(); appState.selectedProductIndex = parseInt(pCard.dataset.index); render(); } else if (appState.selectedElementId || appState.selectedProductIndex > -1) { deselectAll(); render(); } });
+    getEl('preview-canvas').addEventListener('dblclick', (e) => { const elDiv = e.target.closest('.interactive-element'); if (!elDiv) return; const el = getSelectedElement(); if (el?.type === 'text') { const cDiv = elDiv.querySelector('.element-content'); if (cDiv) { cDiv.contentEditable = true; cDiv.focus(); } } });
     getEl('preview-panel').addEventListener('scroll', () => { if (getEl('font-toolbar').style.display === 'flex') { import('./ui.js').then(ui => ui.updateFontToolbar()); }});
-    getEl('font-toolbar').addEventListener('change', (e) => { /* ... unchanged ... */ });
+    getEl('font-toolbar').addEventListener('change', (e) => { const el = getSelectedElement(); if (!el || el.type !== 'text') return; const pMap = { 'font-family-select': 'fontFamily', 'font-size-input': 'fontSize', 'font-color-input': 'color' }; const prop = pMap[e.target.id]; const val = e.target.id === 'font-size-input' ? `${e.target.value}px` : e.target.value; updateElementStyleProperty(prop, val); });
     const templateModal = getEl('template-modal');
     templateModal.querySelector('.close-modal-btn').addEventListener('click', () => templateModal.style.display = 'none');
     getEl('save-template-btn').addEventListener('click', saveCustomTemplate);
     document.addEventListener('keydown', handleKeyboardShortcuts);
-    new Sortable(getEl('page-tabs'), { /* ... unchanged ... */ });
+    new Sortable(getEl('page-tabs'), { animation: 150, onEnd: (evt) => { recordState(); const page = appState.pages.splice(evt.oldIndex, 1)[0]; appState.pages.splice(evt.newIndex, 0, page); const id = getCurrentPage().id; appState.currentPageIndex = appState.pages.findIndex(p => p.id === id); render(); } });
 }
 
-function handleKeyboardShortcuts(e) { /* ... unchanged ... */ }
+function handleKeyboardShortcuts(e) {
+    if (e.target.matches('input, textarea, [contenteditable="true"]')) return;
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const ctrlCmd = isMac ? e.metaKey : e.ctrlKey;
+    if (ctrlCmd) { switch (e.key.toLowerCase()) { case 'z': e.preventDefault(); undo(); break; case 'y': e.preventDefault(); redo(); break; case 's': e.preventDefault(); saveProject(); break; } }
+    else { const el = getSelectedElement(); if(!el) return; switch (e.key) { case 'Delete': case 'Backspace': e.preventDefault(); deleteElement(el.id); break; case 'Escape': e.preventDefault(); deselectAll(); render(); break; case 'ArrowUp': case 'ArrowDown': case 'ArrowLeft': case 'ArrowRight': e.preventDefault(); const a = e.shiftKey ? 10 : 1; if (e.key === 'ArrowUp') el.y -= a; if (e.key === 'ArrowDown') el.y += a; if (e.key === 'ArrowLeft') el.x -= a; if (e.key === 'ArrowRight') el.x += a; debouncedRecordState(); render(); break; } }
+}
 
 // --- INITIALIZATION ---
 async function init() {
@@ -195,6 +257,16 @@ async function init() {
         recordState();
         render();
 
+        // Register the PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            // Use ./ for relative path, fixing the 404 error on GitHub Pages
+            navigator.serviceWorker.register('./service-worker.js').then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, err => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        }
+
     } catch(error) {
         console.error("Failed to initialize application:", error);
         document.body.innerHTML = `<div style="padding: 20px; text-align: center;"><h1>Error</h1><p>Could not load required template files. Please check the console for details.</p></div>`;
@@ -202,4 +274,5 @@ async function init() {
 }
 
 // --- START THE APP ---
+// This listener ensures the init function is called only after the HTML is fully parsed.
 document.addEventListener('DOMContentLoaded', init);
