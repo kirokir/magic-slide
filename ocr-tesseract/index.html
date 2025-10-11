@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract.js OCR Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4bb543;
+            --warning: #ffcc00;
+            --danger: #dc3545;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--gray);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .upload-area.active {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background-color: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #6511a0;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #3da836;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .enhancement-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .enhancement-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--gray-light);
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        
+        .slider-value {
+            margin-left: 10px;
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group input {
+            margin-right: 10px;
+        }
+        
+        .language-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: var(--gray-light);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .result-area {
+            min-height: 300px;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #fafafa;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: var(--success);
+        }
+        
+        .notification.error {
+            background-color: var(--danger);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tesseract.js OCR Tool</h1>
+            <p>Extract text from images with advanced preprocessing and enhancement</p>
+        </header>
+        
+        <div class="app-container">
+            <!-- Input Section -->
+            <div class="input-section">
+                <div class="card">
+                    <h2>Upload Image</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">Drag & drop an image here or click to browse</p>
+                        <input type="file" id="fileInput" accept="image/*" class="hidden">
+                        <button class="btn" id="browseBtn">Browse Files</button>
+                    </div>
+                    
+                    <div id="imageContainer" class="hidden">
+                        <img id="imagePreview" class="image-preview" alt="Image preview">
+                        <div class="action-buttons">
+                            <button class="btn btn-danger" id="removeImageBtn">Remove Image</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>Enhancement Settings</h2>
+                    <div class="enhancement-controls">
+                        <div class="control-group">
+                            <label for="contrastSlider">Contrast</label>
+                            <div class="slider-container">
+                                <input type="range" id="contrastSlider" class="slider" min="0" max="200" value="100">
+                                <span class="slider-value" id="contrastValue">100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="brightnessSlider">Brightness</label>
+                            <div class="slider-container">
+                                <input type="range" id="brightnessSlider" class="slider" min="0" max="200" value="100">
+                                <span class="slider-value" id="brightnessValue">100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="sharpnessSlider">Sharpness</label>
+                            <div class="slider-container">
+                                <input type="range" id="sharpnessSlider" class="slider" min="0" max="200" value="100">
+                                <span class="slider-value" id="sharpnessValue">100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="noiseSlider">Noise Reduction</label>
+                            <div class="slider-container">
+                                <input type="range" id="noiseSlider" class="slider" min="0" max="100" value="0">
+                                <span class="slider-value" id="noiseValue">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="grayscaleCheckbox">
+                        <label for="grayscaleCheckbox">Convert to Grayscale</label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="deskewCheckbox" checked>
+                        <label for="deskewCheckbox">Auto Deskew (Straighten Text)</label>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="languageSelect">OCR Language</label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="eng">English</option>
+                            <option value="spa">Spanish</option>
+                            <option value="deu">German</option>
+                            <option value="fra">French</option>
+                            <option value="ita">Italian</option>
+                            <option value="por">Portuguese</option>
+                            <option value="rus">Russian</option>
+                            <option value="chi_sim">Chinese (Simplified)</option>
+                            <option value="jpn">Japanese</option>
+                            <option value="kor">Korean</option>
+                        </select>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn" id="enhanceBtn">Apply Enhancements</button>
+                        <button class="btn btn-secondary" id="resetEnhancementsBtn">Reset</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Output Section -->
+            <div class="output-section">
+                <div class="card">
+                    <h2>OCR Processing</h2>
+                    <button class="btn btn-success" id="processBtn" disabled>Extract Text</button>
+                    
+                    <div class="progress-container hidden" id="progressContainer">
+                        <div class="progress-bar">
+                            <div class="progress" id="progressBar"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Initializing...</div>
+                    </div>
+                    
+                    <div class="result-area hidden" id="resultArea"></div>
+                    
+                    <div class="action-buttons hidden" id="resultActions">
+                        <button class="btn" id="copyTextBtn">Copy Text</button>
+                        <button class="btn btn-secondary" id="downloadTextBtn">Download as TXT</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>How to Use</h2>
+                    <ol style="padding-left: 20px; margin-bottom: 15px;">
+                        <li>Upload an image containing text</li>
+                        <li>Adjust enhancement settings if needed</li>
+                        <li>Click "Extract Text" to process the image</li>
+                        <li>Copy or download the extracted text</li>
+                    </ol>
+                    
+                    <h3>Tips for Better Results</h3>
+                    <ul style="padding-left: 20px;">
+                        <li>Use high-quality, well-lit images</li>
+                        <li>Ensure text is as horizontal as possible</li>
+                        <li>Adjust contrast to make text stand out</li>
+                        <li>Use grayscale for black & white documents</li>
+                        <li>Apply noise reduction for noisy images</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by Tesseract.js | OCR Text Extraction Tool</p>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
+<script>
+/* -------------------------
+   Tesseract + multi-file + PDF + enhancements
+   - Fixes: "could not be cloned" by passing logger to createWorker()
+   - Supports multiple images + PDFs
+   - Per-image enhancements + default auto-enhance
+   ------------------------- */
+
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const browseBtn = document.getElementById('browseBtn');
+const imageContainer = document.getElementById('imageContainer');
+const imagePreview = document.getElementById('imagePreview');
+const removeImageBtn = document.getElementById('removeImageBtn');
+const processBtn = document.getElementById('processBtn');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const resultArea = document.getElementById('resultArea');
+const resultActions = document.getElementById('resultActions');
+const copyTextBtn = document.getElementById('copyTextBtn');
+const downloadTextBtn = document.getElementById('downloadTextBtn');
+const notification = document.getElementById('notification');
+
+const contrastSlider = document.getElementById('contrastSlider');
+const contrastValue = document.getElementById('contrastValue');
+const brightnessSlider = document.getElementById('brightnessSlider');
+const brightnessValue = document.getElementById('brightnessValue');
+const sharpnessSlider = document.getElementById('sharpnessSlider');
+const sharpnessValue = document.getElementById('sharpnessValue');
+const noiseSlider = document.getElementById('noiseSlider');
+const noiseValue = document.getElementById('noiseValue');
+const grayscaleCheckbox = document.getElementById('grayscaleCheckbox');
+const deskewCheckbox = document.getElementById('deskewCheckbox');
+const languageSelect = document.getElementById('languageSelect');
+const enhanceBtn = document.getElementById('enhanceBtn');
+const resetEnhancementsBtn = document.getElementById('resetEnhancementsBtn');
+
+fileInput.multiple = true; // allow multiple
+
+let worker = null;
+let items = []; // array of { id, type: 'image'|'pdf-page', fileName, page?, originalDataUrl, enhancedDataUrl, defaultEnhanced }
+let currentIndex = 0;
+let ocrResults = [];
+
+// ---------- Utility UI ----------
+browseBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFiles);
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('active'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('active'));
+uploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove('active');
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    handleFiles();
+  }
+});
+
+removeImageBtn.addEventListener('click', () => {
+  items = [];
+  resetImage();
+});
+
+processBtn.addEventListener('click', () => startBatchOCR());
+copyTextBtn.addEventListener('click', copyText);
+downloadTextBtn.addEventListener('click', downloadText);
+enhanceBtn.addEventListener('click', () => {
+  // apply enhancement to currently previewed item
+  if (!items.length) return showNotification('No image loaded', 'error');
+  applyEnhancementToIndex(currentIndex);
+});
+resetEnhancementsBtn.addEventListener('click', () => {
+  resetEnhancements();
+  if (items[currentIndex]) {
+    imagePreview.src = items[currentIndex].originalDataUrl;
+  }
+});
+
+// slider displays
+contrastSlider.addEventListener('input', () => contrastValue.textContent = `${contrastSlider.value}%`);
+brightnessSlider.addEventListener('input', () => brightnessValue.textContent = `${brightnessSlider.value}%`);
+sharpnessSlider.addEventListener('input', () => sharpnessValue.textContent = `${sharpnessSlider.value}%`);
+noiseSlider.addEventListener('input', () => noiseValue.textContent = `${noiseSlider.value}%`);
+
+// ---------- File handling (images + PDFs) ----------
+async function handleFiles() {
+  if (!fileInput.files.length) return;
+  const files = Array.from(fileInput.files);
+  items = [];
+  ocrResults = [];
+  currentIndex = 0;
+  showNotification('Loading files...', 'success');
+
+  for (const file of files) {
+    if (file.type === 'application/pdf') {
+      // Use pdf.js to render pages as canvases to DataURLs
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale: 2 }); // higher resolution
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(viewport.width);
+        canvas.height = Math.round(viewport.height);
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/png');
+        items.push({
+          id: `${file.name}_page_${p}`,
+          type: 'pdf-page',
+          fileName: file.name,
+          page: p,
+          originalDataUrl: dataUrl,
+          enhancedDataUrl: dataUrl,
+          defaultEnhanced: false
+        });
+      }
+    } else if (file.type.startsWith('image/')) {
+      const dataUrl = await fileToDataUrl(file);
+      items.push({
+        id: file.name,
+        type: 'image',
+        fileName: file.name,
+        originalDataUrl: dataUrl,
+        enhancedDataUrl: dataUrl,
+        defaultEnhanced: false
+      });
+    } else {
+      // unsupported
+      showNotification(`Unsupported file: ${file.name}`, 'error');
+    }
+  }
+
+  if (!items.length) {
+    showNotification('No images or PDF pages found', 'error');
+    return;
+  }
+
+  // show first image
+  imageContainer.classList.remove('hidden');
+  imagePreview.src = items[0].originalDataUrl;
+  currentIndex = 0;
+  processBtn.disabled = false;
+
+  // create thumbnails if needed (not shown here to keep concise)
+  showNotification(`${items.length} page(s)/image(s) loaded`, 'success');
+
+  // Apply default enhancement automatically for better OCR (non-destructive)
+  items.forEach((it, idx) => {
+    it.enhancedDataUrl = autoEnhance(it.originalDataUrl); // returns dataURL synchronously from canvas
+    it.defaultEnhanced = true;
+  });
+
+  // set preview to enhanced version by default
+  imagePreview.src = items[0].enhancedDataUrl;
+  resultArea.classList.add('hidden');
+  resultActions.classList.add('hidden');
+}
+
+// helper: convert file->dataURL
+function fileToDataUrl(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res(e.target.result);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- Enhancement utilities ----------
+function autoEnhance(dataUrl) {
+  // a simple automatic enhancement: grayscale + contrast boost
+  const img = new Image();
+  img.src = dataUrl;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Note: must draw after load, but we'll draw synchronously by waiting with onload (but here we return original if not immediate)
+  // To keep this synchronous-like, we'll create a temporary offscreen synchronous enhancement using an intermediate canvas once image loads.
+  // For preloading we will create a temporary blocking promise. Simpler: create and return original immediately, but also schedule async better enhancement for later.
+  // We'll implement a small synchronous-like function that runs only once the image is loaded:
+  // But since caller expects immediate dataURL, we'll create a synchronous fallback (original) and also trigger an asynchronous improved enhancement that updates enhancedDataUrl later.
+
+  // synchronous fallback
+  // schedule async enhancement
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // basic grayscale + contrast
+    for (let i = 0; i < data.length; i += 4) {
+      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+      data[i] = data[i+1] = data[i+2] = avg;
+    }
+    // contrast boost
+    const contrast = 1.2;
+    const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = clamp(factor * (data[i] - 128) + 128);
+      data[i+1] = clamp(factor * (data[i+1] - 128) + 128);
+      data[i+2] = clamp(factor * (data[i+2] - 128) + 128);
+    }
+    ctx.putImageData(imageData, 0, 0);
+    // find item and update enhancedDataUrl
+    const idx = items.findIndex(it => it.originalDataUrl === dataUrl);
+    if (idx >= 0) {
+      items[idx].enhancedDataUrl = canvas.toDataURL('image/png');
+      // if preview currently shows original for that index, update it
+      if (idx === currentIndex) imagePreview.src = items[idx].enhancedDataUrl;
+    }
+  };
+  img.onerror = () => { /* ignore */ };
+
+  return dataUrl; // immediate fallback; enhancedDataUrl will be updated later asynchronously
+}
+
+function clamp(v) {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+// apply manual enhancement from UI to the currently selected item
+function applyEnhancementToIndex(idx) {
+  const it = items[idx];
+  if (!it) return;
+  const img = new Image();
+  img.src = it.originalDataUrl;
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Grayscale
+    if (grayscaleCheckbox.checked) {
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        data[i] = data[i + 1] = data[i + 2] = avg;
+      }
+    }
+
+    // Contrast (slider is percent)
+    const contrastVal = parseInt(contrastSlider.value);
+    const contrast = contrastVal / 100;
+    // formula: convert slider (0..200) to factor allowable - using 0..2 mapping
+    const cFactor = (259 * (contrastVal + 255)) / (255 * (259 - contrastVal));
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = clamp(cFactor * (data[i] - 128) + 128);
+      data[i+1] = clamp(cFactor * (data[i+1] - 128) + 128);
+      data[i+2] = clamp(cFactor * (data[i+2] - 128) + 128);
+    }
+
+    // Brightness
+    const brightness = parseInt(brightnessSlider.value) / 100;
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = clamp(data[i] * brightness);
+      data[i+1] = clamp(data[i+1] * brightness);
+      data[i+2] = clamp(data[i+2] * brightness);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    const enhanced = canvas.toDataURL('image/png');
+    items[idx].enhancedDataUrl = enhanced;
+    imagePreview.src = enhanced;
+    items[idx].defaultEnhanced = false;
+    showNotification('Enhancements applied', 'success');
+  };
+}
+
+// reset enhancement UI values
+function resetEnhancements() {
+  contrastSlider.value = 100; contrastValue.textContent = '100%';
+  brightnessSlider.value = 100; brightnessValue.textContent = '100%';
+  sharpnessSlider.value = 100; sharpnessValue.textContent = '100%';
+  noiseSlider.value = 0; noiseValue.textContent = '0%';
+  grayscaleCheckbox.checked = false;
+  deskewCheckbox.checked = true;
+}
+
+// ---------- OCR worker setup (fixed logger issue) ----------
+async function ensureWorker() {
+  if (worker) return worker;
+  // createWorker accepts a logger option — pass your progress handler here
+  worker = Tesseract.createWorker({
+    logger: m => {
+      // m: { status, progress } — runs on main thread
+      if (m.status === 'recognizing text') {
+        const p = Math.round(m.progress * 100);
+        progressBar.style.width = `${p}%`;
+        progressText.textContent = `Processing page: ${p}%`;
+      } else {
+        progressText.textContent = `${m.status || ''}`;
+      }
+      // if you want overall progress aggregation, you can update UI here
+    }
+  });
+  await worker.load();
+  // do not load language here; we'll load per-language when OCR starts
+  return worker;
+}
+
+// ---------- Batch OCR / processing ----------
+// ---------- Robust worker / fallback setup ----------
+async function ensureWorker() {
+  // If we've already created a worker-like object, return it
+  if (worker) return worker;
+
+  // If Tesseract.createWorker exists, try creating a worker object
+  if (typeof Tesseract !== 'undefined' && typeof Tesseract.createWorker === 'function') {
+    // pass logger here to avoid posting functions later
+    worker = Tesseract.createWorker({
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const p = Math.round(m.progress * 100);
+          progressBar.style.width = `${p}%`;
+          progressText.textContent = `Processing page: ${p}%`;
+        } else {
+          progressText.textContent = `${m.status || ''}`;
+        }
+      }
+    });
+
+    // Some Tesseract bundles return an async-ready worker with load(), loadLanguage(), initialize()
+    // while some older/alternate bundles may return an object without load().
+    // We attempt to call load() only if it exists.
+    try {
+      if (typeof worker.load === 'function') {
+        await worker.load(); // typical API
+        return worker;
+      } else {
+        // worker object doesn't expose load(); keep it and let caller use fallback path
+        return worker;
+      }
+    } catch (err) {
+      console.warn('Worker.load() failed or not present, falling back to recognize API', err);
+      // leave worker as-is (some bundles still allow worker.recognize directly)
+      return worker;
+    }
+  }
+
+  // As a final fallback: use global Tesseract.recognize (no worker)
+  if (typeof Tesseract !== 'undefined' && typeof Tesseract.recognize === 'function') {
+    // create a simple facade to indicate fallback mode
+    worker = { fallbackRecognize: true };
+    return worker;
+  }
+
+  throw new Error('Tesseract.js not found or unsupported build');
+}
+
+// ---------- Batch OCR that handles both worker shapes ----------
+async function startBatchOCR() {
+  if (!items.length) return showNotification('No images to process', 'error');
+  processBtn.disabled = true;
+
+  // ensure worker or fallback facade
+  const w = await ensureWorker();
+
+  // select language
+  const language = languageSelect.value || 'eng';
+
+  let usingWorkerAPI = false;
+  let usingFallbackRecognize = false;
+  try {
+    // detect if worker has loadLanguage/initialize API
+    if (w && typeof w.loadLanguage === 'function' && typeof w.initialize === 'function') {
+      // worker full API path
+      usingWorkerAPI = true;
+      await w.loadLanguage(language);
+      await w.initialize(language);
+      await w.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.AUTO });
+    } else if (w && w.fallbackRecognize) {
+      // we'll use Tesseract.recognize (global)
+      usingFallbackRecognize = true;
+      // nothing to load
+    } else if (w && typeof w.recognize === 'function') {
+      // some createWorker() builds expose recognize directly without load()
+      usingWorkerAPI = true; // treat as usable
+      // no loadLanguage/init steps possible — we'll pass language to recognize directly
+    } else {
+      // unknown shape — fallback to global recognize if present
+      if (typeof Tesseract.recognize === 'function') {
+        usingFallbackRecognize = true;
+      } else {
+        throw new Error('No usable Tesseract API available');
+      }
+    }
+  } catch (e) {
+    console.error('Worker init error:', e);
+    showNotification('Failed to initialize OCR engine', 'error');
+    processBtn.disabled = false;
+    return;
+  }
+
+  progressContainer.classList.remove('hidden');
+  resultArea.classList.add('hidden');
+  resultActions.classList.add('hidden');
+
+  ocrResults = [];
+
+  for (let i = 0; i < items.length; i++) {
+    currentIndex = i;
+    const it = items[i];
+    const imageDataUrl = it.enhancedDataUrl || it.originalDataUrl;
+
+    progressText.textContent = `Processing ${i+1}/${items.length} (${it.fileName}${it.page ? ' - page ' + it.page : ''})...`;
+    progressBar.style.width = '0%';
+
+    try {
+      let res;
+      if (usingWorkerAPI && typeof w.recognize === 'function') {
+        // worker that exposes recognize directly:
+        res = await w.recognize(imageDataUrl, language);
+      } else if (usingWorkerAPI && typeof w.recognize !== 'function') {
+        // full worker API: use w.recognize(image) which should exist after init
+        res = await w.recognize(imageDataUrl);
+      } else if (usingFallbackRecognize) {
+        // global recognize fallback — pass a lightweight logger but avoid sending functions to workers
+        // Note: global recognize accepts { logger } in many builds; if that fails, it still returns a promise
+        res = await Tesseract.recognize(imageDataUrl, language, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const p = Math.round(m.progress * 100);
+              progressBar.style.width = `${p}%`;
+              progressText.textContent = `Processing page: ${p}%`;
+            } else {
+              progressText.textContent = `${m.status || ''}`;
+            }
+          }
+        });
+      } else {
+        throw new Error('No recognition method available');
+      }
+
+      // normalize result shape (some builds return { data: { text, confidence } })
+      const text = (res && res.data && typeof res.data.text === 'string') ? res.data.text : (res && res.text) ? res.text : '';
+      const confidence = (res && res.data && typeof res.data.confidence === 'number') ? res.data.confidence : (res && typeof res.confidence === 'number') ? res.confidence : 0;
+
+      ocrResults.push({ id: it.id, fileName: it.fileName, page: it.page, text: text || '', confidence: confidence || 0});
+      progressBar.style.width = '100%';
+      showNotification(`Processed ${i+1}/${items.length} — ${Math.round(confidence)}%`, 'success');
+
+    } catch (err) {
+      console.error('OCR error item', it, err);
+      ocrResults.push({ id: it.id, fileName: it.fileName, page: it.page, text: '', confidence: 0, error: err.message });
+      showNotification(`Error processing ${it.fileName}`, 'error');
+    }
+  }
+
+  // combine & display
+  let combinedText = '';
+  for (const r of ocrResults) {
+    combinedText += `--- ${r.fileName}${r.page ? ' (page ' + r.page + ')' : ''} ---\n`;
+    combinedText += (r.text || '[no text]') + '\n\n';
+  }
+
+  resultArea.textContent = combinedText.trim() || 'No text detected';
+  resultArea.classList.remove('hidden');
+  resultActions.classList.remove('hidden');
+  processBtn.disabled = false;
+  progressText.textContent = 'Done';
+  progressBar.style.width = '100%';
+  showNotification('OCR batch complete', 'success');
+}
+
+
+// ---------- Copy / Download ----------
+function copyText() {
+  const text = resultArea.textContent;
+  navigator.clipboard.writeText(text).then(() => showNotification('Text copied', 'success'))
+    .catch(err => showNotification('Copy failed: ' + err.message, 'error'));
+}
+function downloadText() {
+  const text = resultArea.textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ocr-results.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showNotification('Download ready', 'success');
+}
+
+// ---------- Misc UI helpers ----------
+function resetImage() {
+  fileInput.value = '';
+  imageContainer.classList.add('hidden');
+  processBtn.disabled = true;
+  resultArea.classList.add('hidden');
+  resultActions.classList.add('hidden');
+  imagePreview.src = '';
+  resetEnhancements();
+}
+
+function showNotification(message, type) {
+  notification.textContent = message;
+  notification.className = `notification ${type} show`;
+  setTimeout(() => notification.classList.remove('show'), 3000);
+}
+
+// Clean up worker on unload
+window.addEventListener('beforeunload', async () => {
+  if (worker) {
+    try { await worker.terminate(); } catch (e) {}
+  }
+});
+</script>
+
+	
+</body>
+</html> 
